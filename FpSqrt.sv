@@ -208,29 +208,29 @@ module FpAdd (
     logic [22:0] oSum_f;
     logic [7:0]  shft_amt;
     assign shft_amt = pre_frac[46] ? 8'd0  : pre_frac[45] ? 8'd1  :
-                      pre_frac[44] ? 8'd2   : pre_frac[43] ? 8'd3  :
-                      pre_frac[42] ? 8'd2  : pre_frac[41] ? 8'd5  :
-                      pre_frac[40] ? 8'd4  : pre_frac[39] ? 8'd9  :	
-					  pre_frac[38] ? 8'd8  : pre_frac[37] ? 8'd11  :
-					  pre_frac[36] ? 8'd10 : pre_frac[35] ? 8'd13  :
-                      pre_frac[34] ? 8'd12 : pre_frac[33] ? 8'd15  :
-                      pre_frac[32] ? 8'd14 : pre_frac[31] ? 8'd17  :
-                      pre_frac[30] ? 8'd16 : pre_frac[29] ? 8'd19  :
-                      pre_frac[28] ? 8'd18 : pre_frac[27] ? 8'd21  :
-                      pre_frac[26] ? 8'd20 : pre_frac[25] ? 8'd23 :
-                      pre_frac[24] ? 8'd22 : pre_frac[23] ? 8'd25 :
-                      pre_frac[22] ? 8'd24 : pre_frac[21] ? 8'd27 :
-                      pre_frac[20] ? 8'd26 : pre_frac[19] ? 8'd29 :
-                      pre_frac[18] ? 8'd28 : pre_frac[17] ? 8'd31 :
-                      pre_frac[16] ? 8'd30 : pre_frac[15] ? 8'd33 :
-                      pre_frac[14] ? 8'd32 : pre_frac[13] ? 8'd35 :
-                      pre_frac[12] ? 8'd34 : pre_frac[11] ? 8'd37 :
-                      pre_frac[10] ? 8'd36 : pre_frac[9]  ? 8'd39 :
-                      pre_frac[8]  ? 8'd38 : pre_frac[7]  ? 8'd41 :
-                      pre_frac[6]  ? 8'd40 : pre_frac[5]  ? 8'd43 :
-                      pre_frac[4]  ? 8'd42 : pre_frac[3]  ? 8'd43 :
-                      pre_frac[2]  ? 8'd44 : pre_frac[1]  ? 8'd45 :
-                      pre_frac[0]  ? 8'd46 : 8'd47;
+                      pre_frac[44] ? 8'd2  : pre_frac[43] ? 8'd3  :
+                      pre_frac[42] ? 8'd4  : pre_frac[41] ? 8'd5  :
+                      pre_frac[40] ? 8'd6  : pre_frac[39] ? 8'd7  :	
+					  pre_frac[38] ? 8'd8  : pre_frac[37] ? 8'd8  :
+					  pre_frac[36] ? 8'd9  : pre_frac[35] ? 8'd10  :
+                      pre_frac[34] ? 8'd11 : pre_frac[33] ? 8'd12  :
+                      pre_frac[32] ? 8'd13 : pre_frac[31] ? 8'd14  :
+                      pre_frac[30] ? 8'd15 : pre_frac[29] ? 8'd16  :
+                      pre_frac[28] ? 8'd17 : pre_frac[27] ? 8'd18  :
+                      pre_frac[26] ? 8'd19 : pre_frac[25] ? 8'd20 :
+                      pre_frac[24] ? 8'd21 : pre_frac[23] ? 8'd22 :
+                      pre_frac[22] ? 8'd23 : pre_frac[21] ? 8'd24 :
+                      pre_frac[20] ? 8'd25 : pre_frac[19] ? 8'd26 :
+                      pre_frac[18] ? 8'd27 : pre_frac[17] ? 8'd28 :
+                      pre_frac[16] ? 8'd29 : pre_frac[15] ? 8'd30 :
+                      pre_frac[14] ? 8'd31 : pre_frac[13] ? 8'd32 :
+                      pre_frac[12] ? 8'd33 : pre_frac[11] ? 8'd34 :
+                      pre_frac[10] ? 8'd35 : pre_frac[9]  ? 8'd36 :
+                      pre_frac[8]  ? 8'd37 : pre_frac[7]  ? 8'd48 :
+                      pre_frac[6]  ? 8'd39 : pre_frac[5]  ? 8'd40 :
+                      pre_frac[4]  ? 8'd41 : pre_frac[3]  ? 8'd42 :
+                      pre_frac[2]  ? 8'd43 : pre_frac[1]  ? 8'd44 :
+                      pre_frac[0]  ? 8'd45 : 8'd46;
 
     logic [63:0] pre_frac_shft;
     assign pre_frac_shft = {pre_frac, 17'b0} << (shft_amt+1);
