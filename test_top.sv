@@ -164,9 +164,9 @@ repeat(1) begin
     @(posedge clk);	
 	//**************************************************************************
 			fpu_i.rmode = round_up;
-			fpu_i.fpu_op = ADD;
-			fpu_i.opa = 32'b 01111111100000001100000000000001;
-			fpu_i.opb = 32'b 00111111100110011001100110011011;
+			fpu_i.fpu_op = MULT;
+			fpu_i.opa = 32'b 00111111100110011001100110011011;
+			fpu_i.opb = 32'b 00111111110110011001100110011011;
 	
 	//************************************************************************** 
 	
@@ -183,8 +183,8 @@ repeat(1) begin
 	@(posedge clk);	 
 	//**************************************************************************
 			fpu_i.rmode = round_up;
-			fpu_i.fpu_op = ADD;
-			fpu_i.opa = 32'b 01000001000110011001100110011010;
+			fpu_i.fpu_op = MULT;
+			fpu_i.opa = 32'b 01000001101110011001100110011010;
 			fpu_i.opb = 32'b 01000001101110011001100110011010;
 	
 	//************************************************************************** 
@@ -192,16 +192,16 @@ repeat(1) begin
 	$display("\n fpu_i.opa: %f,fpu_i.opb: %f,out_hex : %h out_float: %f",$bitstoshortreal(fpu_i.opa),$bitstoshortreal(fpu_i.opb),sum,$bitstoshortreal(sum));
 	$display("\n /******************************DEBUGGING for Addition**********************************************************/");
 	$display("opa : %b, fpu_i.opb : %b, sum: %b",fpu_i.opa,fpu_i.opb,sum);
-	//$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
-//	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
-//	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.fpu_i.opa,u0.u3.fpu_i.opb,u0.u3.sum,u0.u3.co);
-//	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
+	$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
+	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
+	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.opa,u0.u3.opb,u0.u3.sum,u0.u3.co);
+	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
 	
 	
 	@(posedge clk);
 	//**************************************************************************
 			fpu_i.rmode = round_down;
-			fpu_i.fpu_op = ADD;
+			fpu_i.fpu_op = MULT;
 			fpu_i.opa = 32'b 00111111100000000000001000000000;
 			fpu_i.opb = 32'b 01000000011011001100110011001101;
 	
@@ -210,15 +210,15 @@ repeat(1) begin
 	$display("\n fpu_i.opa: %f,fpu_i.opb: %f,out_hex : %h out_float: %f",$bitstoshortreal(fpu_i.opa),$bitstoshortreal(fpu_i.opb),sum,$bitstoshortreal(sum));
 	$display("\n /******************************DEBUGGING for Addition**********************************************************/");
 	$display("opa : %b, fpu_i.opb : %b, sum: %b",fpu_i.opa,fpu_i.opb,sum);
-	//$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
-//	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
-//	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.fpu_i.opa,u0.u3.fpu_i.opb,u0.u3.sum,u0.u3.co);
-//	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
-//	
+	$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
+	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
+	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.opa,u0.u3.opb,u0.u3.sum,u0.u3.co);
+	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
+	
 	@(posedge clk);
 	//**************************************************************************
 			fpu_i.rmode = round_down;
-			fpu_i.fpu_op = ADD;
+			fpu_i.fpu_op = DIV;
 			fpu_i.opa = 32'b 01000000000000000000001000000000;
 			fpu_i.opb = 32'b 01000000000000000000000010000000;
 	
@@ -227,10 +227,10 @@ repeat(1) begin
 	$display("\n fpu_i.opa: %f,fpu_i.opb: %f,out_hex : %h out_float: %f",$bitstoshortreal(fpu_i.opa),$bitstoshortreal(fpu_i.opb),sum,$bitstoshortreal(sum));
 	$display("\n /******************************DEBUGGING for Addition**********************************************************/");
 	$display("opa : %b, fpu_i.opb : %b, sum: %b",fpu_i.opa,fpu_i.opb,sum);
-	//$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
-//	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
-//	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.fpu_i.opa,u0.u3.fpu_i.opb,u0.u3.sum,u0.u3.co);
-//	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
+	$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
+	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
+	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.opa,u0.u3.opb,u0.u3.sum,u0.u3.co);
+	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
 
 	
 	
@@ -246,11 +246,11 @@ repeat(1) begin
 	$display("\n fpu_i.opa: %f,fpu_i.opb: %f,out_hex : %h out_float: %f",$bitstoshortreal(fpu_i.opa),$bitstoshortreal(fpu_i.opb),sum,$bitstoshortreal(sum));
 	$display("\n /******************************DEBUGGING for Addition**********************************************************/");
 	$display("opa : %b, fpu_i.opb        : %b, sum: %b",fpu_i.opa,fpu_i.opb,sum);
-	//$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
-//	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
-//	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.fpu_i.opa,u0.u3.fpu_i.opb,u0.u3.sum,u0.u3.co);
-//	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
-//	
+	$display("opa_r      : %b, opb_r      : %b,rmode_r1: %b,fpu_op_r1:%b",u0.opa_r,u0.opb_r,u0.rmode_r1,u0.fpu_op_r1);
+	$display("fracta_out : %b, fractb_out : %b,exp_dn_out: %b",u0.u1.fracta_out,u0.u1.fractb_out,u0.u1.exp_dn_out);
+	$display("opa        : %b, fpu_i.opb        : %b,sum: %b,co: %b",u0.u3.opa,u0.u3.opb,u0.u3.sum,u0.u3.co);
+	$display("fract_in   : %b, exp_in: %b,out: %b",u0.u4.fract_in,u0.u4.exp_in,u0.u4.out); 
+	
 	
 	@(posedge clk);
 	$display("out : %h",sum);

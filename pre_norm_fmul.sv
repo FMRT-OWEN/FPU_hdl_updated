@@ -49,7 +49,7 @@ output	[2:0]	underflow;
 ////////////////////////////////////////////////////////////////////////
 //
 // Local Wires and registers
-////////////////////////////////////////////////////////////////////////
+//
 
 logic	[7:0]	exp_out;
 logic		signa, signb;
@@ -67,14 +67,15 @@ logic		opa_00, opb_00, fracta_00, fractb_00;
 logic	[7:0]	exp_tmp3, exp_tmp4, exp_tmp5;
 logic	[2:0]	underflow_d;
 logic	[2:0]	underflow;
-logic		op_div = (fpu_op == 3'b011);
+logic	op_div ;
+
 logic	[7:0]	exp_out_mul, exp_out_div;
 
 ////////////////////////////////////////////////////////////////////////
 //
 // Aliases
 //
-
+assign op_div = (fpu_op == 3'b011) ? 1'b1: 1'b0;
 assign  signa = opa[31];
 assign  signb = opb[31];
 assign   expa = opa[30:23];

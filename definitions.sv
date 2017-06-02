@@ -26,7 +26,7 @@ typedef struct packed{	    //Float type oparand structure
 	logic[22:0] mantissa;
 }float_t;
 
-typedef struct {
+typedef struct packed{
 	fpu_op_t fpu_op;         //3 bit fpu opcode enumarated type
 	rmode_t rmode;           //2 bit rmode enumarated type
 	float_t opa;	         //32 bit floating type operand 1
@@ -34,3 +34,7 @@ typedef struct {
 }fpu_instruction_t;
 
 endpackage
+
+
+
+
