@@ -5,6 +5,6 @@ Added 32 bit working square root
 
 All Warnings are removed
 
-Added interface to design
+Added interface to design and its declaration to definition package
 
 
