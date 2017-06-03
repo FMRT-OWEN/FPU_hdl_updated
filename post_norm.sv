@@ -77,6 +77,7 @@ wire		op_div = fpu_op[2:0]==3'b011;
 wire		op_i2f = fpu_op[2:0]==3'b100;
 wire		op_f2i = fpu_op[2:0]==3'b101;
 reg	[5:0]	fi_ldz;
+wire        max_num_del;
 
 wire		g, r, s;
 wire		round, round2, round2a, round2_fasu, round2_fmul;

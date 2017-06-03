@@ -1,3 +1,4 @@
+`timescale 1ns / 100ps
 package definitions;
 
 /* FPU Operations (fpu_op):
@@ -33,7 +34,34 @@ typedef struct packed{
 	float_t opb;		     //32 bit floating type operand 2
 }fpu_instruction_t;
 
-endpackage
+endpackage 
+
+`timescale 1ns / 100ps
+import definitions::*; 
+
+//Define the interface
+interface fpu_interface(input bit clk); 
+	fpu_instruction_t fpu_i;
+	float_t out;
+	logic		inf, snan, qnan;
+	logic		ine;
+	logic		overflow, underflow;
+	logic		zero;
+	logic		div_by_zero;
+	//Input Modport
+	modport IN(input clk,
+	output fpu_i); 
+	
+	//Output Modport
+	modport OUT(input clk,	 
+	input	    out,
+	input		inf, snan, qnan,
+	input		ine,
+	input		overflow, underflow,
+	input		zero,
+	input		div_by_zero);
+
+endinterface
 
 
 
