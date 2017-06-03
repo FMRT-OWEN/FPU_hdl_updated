@@ -40,7 +40,7 @@ endpackage
 import definitions::*; 
 
 //Define the interface
-interface fpu_interface(input bit clk); 
+interface fpu_interface(input logic clk,reset); 
 	fpu_instruction_t fpu_i;
 	float_t out;
 	logic		inf, snan, qnan;

@@ -58,18 +58,20 @@ endmodule
 // Multiply
 //
 
-module mul_r2(clk, opa, opb, prod);
-input		clk;
+module mul_r2(clk, reset, opa, opb, prod);
+input		clk,reset;
 input	[23:0]	opa, opb;
 output	[47:0]	prod;
 
 logic	[47:0]	prod1, prod;
 
-always_ff @(posedge clk)
-	prod1 <= /*#1*/ opa * opb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) prod1 <= 0;
+	else prod1 <= /*#1*/ opa * opb;
 
-always_ff @(posedge clk)
-	prod <= /*#1*/ prod1;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) prod <= 0;
+	else prod <= /*#1*/ prod1;
 
 endmodule
 
@@ -78,25 +80,29 @@ endmodule
 // Divide
 //
 
-module div_r2(clk, opa, opb, quo, rem);
-input		clk;
+module div_r2(clk, reset, opa, opb, quo, rem);
+input		clk, reset;
 input	[49:0]	opa;
 input	[23:0]	opb;
 output	[49:0]	quo, rem;
 
 logic	[49:0]	quo, rem, quo1, remainder;
 
-always_ff @(posedge clk)
-	quo1 <= /*#1*/ opa / opb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) quo1 <= 0;
+	else quo1 <= /*#1*/ opa / opb;
 
-always_ff @(posedge clk)
-	quo <= /*#1*/ quo1;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) quo <= 0;
+	else quo <= /*#1*/ quo1;
 
-always_ff @(posedge clk)
-	remainder <= /*#1*/ opa % opb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) remainder <= 0;
+	else remainder <= /*#1*/ opa % opb;
 
-always_ff @(posedge clk)
-	rem <= /*#1*/ remainder;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) rem <= 0;
+	else rem <= /*#1*/ remainder;
 
 endmodule
 

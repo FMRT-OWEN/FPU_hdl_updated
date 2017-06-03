@@ -35,10 +35,11 @@
 `timescale 1ns / 100ps
 
 
-module pre_norm(clk, rmode, add, opa, opb, opa_nan, opb_nan, fracta_out,
+module pre_norm(clk, reset, rmode, add, opa, opb, opa_nan, opb_nan, fracta_out,
 		fractb_out, exp_dn_out, sign, nan_sign, result_zero_sign,
 		fasu_op);
 input		clk;
+input      reset;
 input	[1:0]	rmode;
 input		add;
 input	[31:0]	opa, opb;
@@ -120,8 +121,9 @@ assign exp_diff1a = exp_diff1-1;
 assign exp_diff2  = (expa_dn | expb_dn) ? exp_diff1a : exp_diff1;
 assign  exp_diff  = (expa_dn & expb_dn) ? 8'h0 : exp_diff2;
 
-always_ff @(posedge clk)	// If numbers are equal we should return zero
-	exp_dn_out <= /*#1*/ (!add_d & expa==expb & fracta==fractb) ? 8'h0 : exp_large;
+always_ff @(posedge clk or posedge reset)	// If numbers are equal we should return zero
+		if ( reset == 1'b1) exp_dn_out <= 0;
+		else exp_dn_out <= /*#1*/ (!add_d & expa==expb & fracta==fractb) ? 8'h0 : exp_large;
 
 // ---------------------------------------------------------------------
 // Adjust the smaller fraction
@@ -185,11 +187,13 @@ assign fractb_lt_fracta = fractb_n > fracta_n;	// fractb is larger than fracta
 assign fracta_s = fractb_lt_fracta ? fractb_n : fracta_n;
 assign fractb_s = fractb_lt_fracta ? fracta_n : fractb_n;
 
-always_ff @(posedge clk)
-	fracta_out <= /*#1*/ fracta_s;
+always_ff @(posedge clk or posedge reset) 
+	if ( reset == 1'b1) fracta_out <= 0;
+	else fracta_out <= /*#1*/ fracta_s;
 
-always_ff @(posedge clk)
-	fractb_out <= /*#1*/ fractb_s;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) fractb_out <= 0;
+	else fractb_out <= /*#1*/ fractb_s;
 
 // ---------------------------------------------------------------------
 // Determine sign for the output
@@ -211,36 +215,44 @@ always_comb //@(signa or signb or add or fractb_lt_fracta)
 	3'b1_1_0: sign_d = !fractb_lt_fracta;
    endcase
 
-always_ff @(posedge clk)
-	sign <= /*#1*/ sign_d;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) sign <= 0;
+	else sign <= /*#1*/ sign_d;
 
 // Fix sign for ZERO result
-always_ff @(posedge clk)
-	signa_r <= /*#1*/ signa;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) signa_r <= 0;
+	else signa_r <= /*#1*/ signa;
 
-always_ff @(posedge clk)
-	signb_r <= /*#1*/ signb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) signb_r <= 0;
+	else signb_r <= /*#1*/ signb;
 
-always_ff @(posedge clk)
-	add_r <= /*#1*/ add;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) add_r <= 0;
+	else add_r <= /*#1*/ add;
 
-always_ff @(posedge clk)
-	result_zero_sign <= /*#1*/	( add_r &  signa_r &  signb_r) |
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) result_zero_sign <= 0;
+	else result_zero_sign <= /*#1*/	( add_r &  signa_r &  signb_r) |
 				(!add_r &  signa_r & !signb_r) |
 				( add_r & (signa_r |  signb_r) & (rmode==3)) |
 				(!add_r & (signa_r == signb_r) & (rmode==3));
 
 // Fix sign for NAN result
-always_ff @(posedge clk)
-	fracta_lt_fractb <= /*#1*/ fracta < fractb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) fracta_lt_fractb <= 0;
+	else fracta_lt_fractb <= /*#1*/ fracta < fractb;
 
-always_ff @(posedge clk)
-	fracta_eq_fractb <= /*#1*/ fracta == fractb;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) fracta_eq_fractb <= 0;
+	else fracta_eq_fractb <= /*#1*/ fracta == fractb;
 
 assign nan_sign1 = fracta_eq_fractb ? (signa_r & signb_r) : fracta_lt_fractb ? signb_r : signa_r;
 
-always_ff @(posedge clk)
-	nan_sign <= /*#1*/ (opa_nan & opb_nan) ? nan_sign1 : opb_nan ? signb_r : signa_r;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) nan_sign <= 0;
+	else nan_sign <= /*#1*/ (opa_nan & opb_nan) ? nan_sign1 : opb_nan ? signb_r : signa_r;
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -264,7 +276,8 @@ always_comb //@(signa or signb or add)
 	3'b1_1_0: add_d = 0;
    endcase
 
-always_ff @(posedge clk)
-	fasu_op <= /*#1*/ add_d;
+always_ff @(posedge clk or posedge reset)
+	if ( reset == 1'b1) fasu_op <= 0;
+	else fasu_op <= /*#1*/ add_d;
 
 endmodule
