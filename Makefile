@@ -18,6 +18,7 @@ compile:
 	vlib $(MODE)work
 	vmap work $(MODE)work
 	vlog -f $(VMW_HOME)/tbx/questa/hdl/scemi_pipes_sv_files.f 
+	vlog hdl/definitions.sv
 	vlog hvl/fpu_hvl.sv
 ifeq ($(MODE),puresim)
 	vlog $(VLOG)
@@ -29,7 +30,7 @@ endif
 
 
 sim:
-	vsim -c fpu_hvl top TbxSvManager +RUNS=100000 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
+	vsim -c fpu_hvl top TbxSvManager +RUNS=200 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
 
 clean:
 	rm -rf work transcript vsim.wlf dpi.so modelsim.ini output.log result.TBX tbxsvlink.log

@@ -136,6 +136,10 @@ class stimulus_gen ;
 			instruction.rmode 	= round_nearest_even;
 			instruction.fpu_op	= ADD;
 			
+			//TODO: randomize later
+			instruction.opa		= 32'hAAAA_BBBB;
+			instruction.opb		= 32'hCCCC_DDDD;
+			
 			//if true, then stimulus will be taken from file
 			if(file) 
 			begin 	
@@ -162,7 +166,7 @@ class stimulus_gen ;
 		begin			
 			
 			//generating operands based on sign 
-			case(signs)	
+			/*case(signs)	
 				   "++": 
 						begin
 							if(randomize(instruction.opa) with {instruction.opa > 0;instruction.opa < ((2**31)-1);});
@@ -201,7 +205,7 @@ class stimulus_gen ;
 							if(randomize(instruction.opb) with { instruction.opb>0;instruction.opb<20;});
 							//if(debug) $display("m=%d",m);								
 						end
-			endcase	
+			endcase	*/
 			
 			sent_queue.push_back(instruction);	
 			
@@ -236,14 +240,14 @@ class stimulus_gen ;
 		driverChannel.send_bytes(1,data_send ,1);
 		
 		//flush the pipe to initiate the processing of data in input pipe
-		driverChannel.flush_pipe;		
+		driverChannel.flush();		
 			 
 	endtask
 
 endclass
 
 
-module booth_hvl;
+module fpu_hvl;
 
 	scoreboard 		scb;
 	stimulus_gen 	stim_gen;

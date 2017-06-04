@@ -71,7 +71,7 @@
         fpu_if.fpu_i.opa	<= opa;
 		fpu_if.fpu_i.opb	<= opb;
 		fpu_if.fpu_i.rmode 	<= round_mode;
-		fpu_if.fpu_i.fpu_op <= fpu_op;
+		fpu_if.fpu_i.fpu_op <= op_code;
 		
         if(reset)
         begin
@@ -89,8 +89,8 @@
 				if(!eom)
 					inputpipe.receive(1,ne_valid,incoming,eom);
 				
-				round_mode	<= incoming[68:66]
-				op_code 	<= incoming[65:64]
+				round_mode	<= incoming[68:66];
+				op_code 	<= incoming[65:64];
 				opa 		<= incoming[63:32];
 				opb 		<= incoming[31:0];
 				issued 		<=1;
