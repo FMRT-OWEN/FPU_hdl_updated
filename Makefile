@@ -8,7 +8,6 @@ VLOG = \
         hdl/fpu.sv \
 		hdl/definitions.sv \
 		hdl/except.sv \
-		hdl/FpSqrt.sv \
 		hdl/post_norm.sv \
 		hdl/pre_norm.sv \
 		hdl/pre_norm_fmul.sv \
@@ -17,11 +16,12 @@ VLOG = \
 compile:
 	vlib $(MODE)work
 	vmap work $(MODE)work
-	vlog -f $(VMW_HOME)/tbx/questa/hdl/scemi_pipes_sv_files.f 
+	vlog -f $(VMW_HOME)/tbx/questa/hdl/scemi_pipes_sv_files.f
 	vlog hdl/definitions.sv
-	vlog hvl/fpu_hvl.sv
+	vlog hvl/fpu_hvl.sv 
 ifeq ($(MODE),puresim)
 	vlog $(VLOG)
+
 else
 	velanalyze $(VLOG)
 	velcomp -top top

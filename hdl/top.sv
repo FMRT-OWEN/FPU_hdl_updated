@@ -1,5 +1,6 @@
 //This is a top level testbench. HDL side. Contains XRTL Transactor
 
+//`timescale 1ns / 100ps
 
 	module top;
 

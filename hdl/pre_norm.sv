@@ -32,7 +32,7 @@
 ////                                                             ////
 /////////////////////////////////////////////////////////////////////
 
-`timescale 1ns / 100ps
+//`timescale 1ns / 100ps
 
 
 module pre_norm(clk, reset, rmode, add, opa, opb, opa_nan, opb_nan, fracta_out,

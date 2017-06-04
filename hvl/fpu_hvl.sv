@@ -1,5 +1,6 @@
 // This is HVL for FPU verification environment that runs on the Workstation
 
+//`timescale 1ns / 100ps
 
 import scemi_pipes_pkg::*; // For trans-language TLM channels.
 import definitions::*;

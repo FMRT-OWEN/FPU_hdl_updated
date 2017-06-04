@@ -1,4 +1,4 @@
-`timescale 1ns / 100ps
+//`timescale 1ns / 100ps
 package definitions;
 
 /* FPU Operations (fpu_op):
@@ -36,7 +36,7 @@ typedef struct packed{
 
 endpackage 
 
-`timescale 1ns / 100ps
+//`timescale 1ns / 100ps
 import definitions::*; 
 
 //Define the interface

@@ -33,7 +33,7 @@
 /////////////////////////////////////////////////////////////////////
 
 
-`timescale 1ns / 100ps
+//`timescale 1ns / 100ps
 
 
 module except(	clk, reset,opa, opb, inf, ind, qnan, snan, opa_nan, opb_nan,

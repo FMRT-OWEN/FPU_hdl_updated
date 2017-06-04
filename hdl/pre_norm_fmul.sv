@@ -32,7 +32,7 @@
 ////                                                             ////
 /////////////////////////////////////////////////////////////////////
 
-`timescale 1ns / 100ps
+//`timescale 1ns / 100ps
 
 module pre_norm_fmul(clk,reset, fpu_op, opa, opb, fracta, fractb, exp_out, sign,
 		sign_exe, inf, exp_ovf, underflow);
