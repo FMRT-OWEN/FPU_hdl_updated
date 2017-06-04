@@ -129,7 +129,7 @@ except u0(.clk(fpu_if.clk),.reset(fpu_if.reset),
 // - determine result sign
 // - determine actual operation to perform (add or sub)
 //
-
+logic 		fasu_op;
 logic		nan_sign_d, result_zero_sign_d;
 logic		sign_fasu_r;
 logic	[7:0]	exp_mul;
@@ -360,7 +360,7 @@ post_norm u4(.clk(fpu_if.clk),			// System Clock
 //
 // FPU Outputs
 //
-logic		fasu_op, fasu_op_r1, fasu_op_r2;
+logic		fasu_op_r1, fasu_op_r2;
 logic	[30:0]	out_fixed;
 logic		output_zero_fasu;
 logic		output_zero_fdiv;
@@ -484,32 +484,32 @@ logic	[2:0]	fop;
 logic	[4:0]	ldza_del;
 logic	[49:0]	quo_del;
 
-delay1  #0 ud000(fpu_if.clk,fpu_if.reset, underflow_fmul1, mul_uf_del);
-delay1  #0 ud001(fpu_if.clk,fpu_if.reset, underflow_fmul_r[0], uf2_del);
-delay1  #0 ud002(fpu_if.clk,fpu_if.reset, underflow_fmul_r[1], ufb2_del);
-delay1  #0 ud003(fpu_if.clk,fpu_if.reset, underflow_d, underflow_d_del);
-delay1  #0 ud004(fpu_if.clk,fpu_if.reset, test.u0.u4.exp_out1_co, co_del);
-delay1  #0 ud005(fpu_if.clk,fpu_if.reset, underflow_fmul_r[2], ufc2_del);
-delay1  #30 ud006(fpu_if.clk,fpu_if.reset, out_d, out_d_del);
+// delay1  #0 ud000(fpu_if.clk,fpu_if.reset, underflow_fmul1, mul_uf_del);
+// delay1  #0 ud001(fpu_if.clk,fpu_if.reset, underflow_fmul_r[0], uf2_del);
+// delay1  #0 ud002(fpu_if.clk,fpu_if.reset, underflow_fmul_r[1], ufb2_del);
+// delay1  #0 ud003(fpu_if.clk,fpu_if.reset, underflow_d, underflow_d_del);
+// delay1  #0 ud004(fpu_if.clk,fpu_if.reset, test.u0.u4.exp_out1_co, co_del);
+// delay1  #0 ud005(fpu_if.clk,fpu_if.reset, underflow_fmul_r[2], ufc2_del);
+// delay1  #30 ud006(fpu_if.clk,fpu_if.reset, out_d, out_d_del);
 
-delay1  #0 ud007(fpu_if.clk,fpu_if.reset, overflow_fasu, ov_fasu_del);
-delay1  #0 ud008(fpu_if.clk,fpu_if.reset, overflow_fmul, ov_fmul_del);
+// delay1  #0 ud007(fpu_if.clk,fpu_if.reset, overflow_fasu, ov_fasu_del);
+// delay1  #0 ud008(fpu_if.clk,fpu_if.reset, overflow_fmul, ov_fmul_del);
 
-delay1  #2 ud009(fpu_if.clk,fpu_if.reset, fpu_op_r3, fop);
+// delay1  #2 ud009(fpu_if.clk,fpu_if.reset, fpu_op_r3, fop);
 
-delay3  #4 ud010(fpu_if.clk,fpu_if.reset, div_opa_ldz_d, ldza_del);
+// delay3  #4 ud010(fpu_if.clk,fpu_if.reset, div_opa_ldz_d, ldza_del);
 
-delay1  #49 ud012(fpu_if.clk,fpu_if.reset, quo, quo_del);
+// delay1  #49 ud012(fpu_if.clk,fpu_if.reset, quo, quo_del);
 
-always @(test.error_event)
-   begin
-	#0.2
-	$display("muf: %b uf0: %b uf1: %b uf2: %b, tx0: %b, co: %b, out_d: %h (%h %h), ov_fasu: %b, ov_fmul: %b, fop: %h",
-			mul_uf_del, uf2_del, ufb2_del, ufc2_del, underflow_d_del, co_del, out_d_del, out_d_del[30:23], out_d_del[22:0],
-			ov_fasu_del, ov_fmul_del, fop );
-	$display("ldza: %h, quo: %b",
-			ldza_del, quo_del);
-   end
+// always @(test.error_event)
+   // begin
+	// #0.2
+	// $display("muf: %b uf0: %b uf1: %b uf2: %b, tx0: %b, co: %b, out_d: %h (%h %h), ov_fasu: %b, ov_fmul: %b, fop: %h",
+			// mul_uf_del, uf2_del, ufb2_del, ufc2_del, underflow_d_del, co_del, out_d_del, out_d_del[30:23], out_d_del[22:0],
+			// ov_fasu_del, ov_fmul_del, fop );
+	// $display("ldza: %h, quo: %b",
+			// ldza_del, quo_del);
+   // end
 // synopsys translate_on
 
 
