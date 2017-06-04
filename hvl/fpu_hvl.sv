@@ -78,13 +78,14 @@ class scoreboard;
 			monitorChannel.receive_bytes(1, ne_valid, data_received, eom_flag);
 			
 			//unpacking the data_received
-			//MSByte goes to flag vector
-			//remaining bytes go to expected_result of type float_t
+			//last Byte goes to flag vector
+			//remaining bytes go to result of type float_t
 			//NOTE: this logic depends on the order in which data is sent from HDL
 			{flag_vector, result} = { >> float_t {data_received}};
 			
 			// if(startup)
 			// begin 
+			
 			//pop out the instruction which was sent earlier 
 			instruction=sent_queue.pop_front;	
 
@@ -215,7 +216,8 @@ class stimulus_gen ;
 			//followed by 4 bytes of opa,
 			//followed by 4 bytes of opb
 			//total bytes packed = 9 bytes
-			data_send= {>>{3'b0,instruction}};
+			//NOTE: this logic depends on the order of memebers in fpu_instruction_t struct
+			data_send= {<< byte {3'b0,instruction}};
 			
 			//filling the input pipe with data_send
 			driverChannel.send_bytes(1, data_send, 0);
@@ -243,10 +245,10 @@ endclass
 
 module booth_hvl;
 
-	scoreboard scb;
-	stimulus_gen stim_gen;
-	integer runs;
-	reg [15:0]signs;
+	scoreboard 		scb;
+	stimulus_gen 	stim_gen;
+	integer 		runs;
+	reg [15:0]		signs;
 
 	task run();			//used fork join done to use
 	  integer i;
@@ -271,8 +273,8 @@ module booth_hvl;
 	   if($value$plusargs("SIGNS=%s",signs))
 		$display("Generating Multiplicand with %c Sign and Multiplier with %c Sign",signs[15:8],signs[7:0]);
 				
-		scb = new();			
-		stim_gen = new();
+		scb 		= new();			
+		stim_gen 	= new();
 		$display("\nStarted at"); $system("date");
 		run();
 		

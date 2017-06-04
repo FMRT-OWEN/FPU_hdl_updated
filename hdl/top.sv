@@ -21,15 +21,26 @@
 		#10 reset=0;
 	end
 
+	localparam data_width = 32;
+	
 	//DUT Instantiation 
-	reg load;
-	reg [data_width-1:0]m,r;
-	wire [(data_width*2)-1:0] product;
-	wire done;
+	reg 	[data_width-1:0]		opa,opb;
+	reg		[2:0]					op_code;
+	reg		[1:0]					round_mode;
+	wire 	[(data_width*2)-1:0] 	result;
+	wire 	[7:0]					flag_vector;
 
-	booth_fsm #(data_width,data_width) m1(.clk(clk),.reset(reset),.load(load),.m(m),.r(r),.product(product),.done(done));
+	//creating interface
+	fpu_interface fpu_if(clk,reset);
+	
+	//instantiating the DUT
+	fpu fpu_inst(fpu_if);
+	
+	//booth_fsm #(data_width,data_width) m1(.clk(clk),.reset(reset),.load(load),.m(m),.r(r),.product(product),.done(done));
 
-
+	assign result = fpu_if.out;
+	assign flag_vector = {fpu_if.inf,fpu_if.snan,fpu_if.qnan,fpu_if.ine,fpu_if.overflow,fpu_if.underflow,fpu_if.zero,fpu_if.div_by_zero};
+	
 	//Input Pipe Instantiation 
 	//receives 9 bytes = 4 bytes for opa + 4 bytes for opb and 
 	//1 byte for opcode and rounding mode
@@ -46,46 +57,44 @@
 					   .PAYLOAD_MAX_ELEMENTS(1),
 					   .BUFFER_MAX_ELEMENTS(100)
 					   ) outputpipe(clk);
+					   
 	//XRTL FSM to obtain operands from the HVL side
-	bit [(data_width*2)-1:0]operands;
-	bit eom=0;
-	reg [7:0] ne_valid=0;
-	reg issued;
+	 
+	
+	bit [(data_width*2)+8-1:0]	incoming;
+	bit 						eom=0;
+	reg [7:0] 					ne_valid=0;
+	reg 						issued;
 
 	always@(posedge clk)
 	begin
-        
+        fpu_if.fpu_i.opa	<= opa;
+		fpu_if.fpu_i.opb	<= opb;
+		fpu_if.fpu_i.rmode 	<= round_mode;
+		fpu_if.fpu_i.fpu_op <= fpu_op;
+		
         if(reset)
         begin
-                m <= {data_width{1'b0}};
-                r <= {data_width{1'b0}};
-                load <= 0;
+                opa 		<= '0;
+                opb 		<= '0;
+				op_code 	<= '0;
+				round_mode 	<= '0;
                
         end
         else 
-        if(done)
-        begin
-                if(!issued)
-                  begin
-                 
-                
-	            outputpipe.send(1,product,eom);   
-		               
-                    if(!eom)
-			inputpipe.receive(2,ne_valid,operands,eom);
+        begin     
 			
-                    m <= operands[63:32];
-                    r <= operands[31:0];
-                    issued <=1;
-                 end
-                load <=1;
-            end
-        else
-        
-       begin
-          issued<=0;
-          load <=0;
-        end        
+				outputpipe.send(1,{flag_vector,result},eom);   
+				   
+				if(!eom)
+					inputpipe.receive(1,ne_valid,incoming,eom);
+				
+				round_mode	<= incoming[68:66]
+				op_code 	<= incoming[65:64]
+				opa 		<= incoming[63:32];
+				opb 		<= incoming[31:0];
+				issued 		<=1;
+		end
         
 	end
 
