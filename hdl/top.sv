@@ -70,7 +70,7 @@
 	begin
         fpu_if.fpu_i.opa	<= opa;
 		fpu_if.fpu_i.opb	<= opb;
-		fpu_if.fpu_i.rmode 	<= round_mode;
+		fpu_if.fpu_i.rmode 	<= $cast(round_mode);
 		fpu_if.fpu_i.fpu_op <= op_code;
 		
         if(reset)
