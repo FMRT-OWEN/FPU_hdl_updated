@@ -22,7 +22,7 @@ fpu_instruction_t sent_queue [$];
 logic startup = 0;
 
 //When debug is 1, results are printed on terminal
-parameter debug=1;
+parameter debug=0;
 
 //When file is 1, multiplicand, multiplier and results are written to text files
 parameter file = 1;
@@ -70,7 +70,7 @@ class scoreboard;
 			//holds the data received from HDL
 			//first 4 bytes hold output of fpu operation
 			//next byte holds the flag vector raised by the operation
-			automatic byte unsigned data_received[] = new[5];
+			automatic byte unsigned data_received[] = new[4];
 			
 			//receives the data from HDL
 			//bytes are packed in such way that LSByte of the data sent from HDL
@@ -82,14 +82,29 @@ class scoreboard;
 			//last Byte goes to flag vector
 			//remaining bytes go to result of type float_t
 			//NOTE: this logic depends on the order in which data is sent from HDL
-			{flag_vector, result} = { >> float_t {data_received}};
+			{result} = { << byte {data_received}};
 			
-			// if(startup)
-			// begin 
+			//TODO:debug
+			//inference: received data is not correct
+			$fwrite(output_file,"flag : %b , result : %b ", flag_vector,result);
+			
+		
 			
 			//pop out the instruction which was sent earlier 
 			instruction=sent_queue.pop_front;	
-
+			
+			//TODO: debug
+			//*****************************************
+			//inference: the popped instruction is same as pushed one
+			//$fwrite(operanda_file,"popped => opa : %0b, opb : %0b, rmode : %b, opcode : %b \n",instruction.opa, instruction.opb, instruction.rmode, instruction.fpu_op);
+			foreach(data_received[i])
+			begin
+				$fwrite(output_file,"data received %b , ", data_received[i]);
+			end 
+			$fwrite(output_file,"\n");
+			
+			//**********************************
+			
 			//TODO: write proper logic
 			//performing addition of the operands
 			expected_result = $shortrealtobits(shortreal'(instruction.opa) + shortreal'(instruction.opb)); 
@@ -97,17 +112,19 @@ class scoreboard;
 			//checking the correctness of the received result
 			if(expected_result !== result)		//If obtained and expected products don't match, its an error
 			begin
-			$display("Error: opa=%f opb=%f expected result=%f obtained product =%f",instruction.opa,instruction.opb,expected_result,result);
+			//$display("Error: opa=%f opb=%f expected result=%f obtained product =%f",instruction.opa,instruction.opb,expected_result,result);
 			error_count++;
 			end
 
 			if(file)	//Write to file if file I/O is enabled 
-			$fwrite(output_file,"%0f\n",result);
+			//$fwrite(output_file,"%0b\n",result);
 		
 			if(debug)	//Display in debug 
 			$display("opa=%f opb=%f Expected result=%f Obtained result =%f",instruction.opa,instruction.opb,expected_result,result);
 			// end
 			
+			if(eom_flag)
+				$finish;
 			// if(!startup)	//The first result sent is zero (in reset). Its ignored 
 			// startup = 1;
 		end	
@@ -133,13 +150,26 @@ class stimulus_gen ;
 	function new();			
 		begin
 			// connecting the handle to the input pipe, input pipe is the instance in  hdl
-			driverChannel 		= new ("top.inputpipe");	
-			instruction.rmode 	= round_nearest_even;
-			instruction.fpu_op	= ADD;
+			driverChannel 		= new ("top.inputpipe");
 			
 			//TODO: randomize later
-			instruction.opa		= 32'hAAAA_BBBB;
-			instruction.opb		= 32'hCCCC_DDDD;
+			//23.2 + 23.2	
+			// instruction.rmode 	= round_up;
+			// instruction.fpu_op	= ADD;
+			// instruction.opa		= 32'b 01000001101110011001100110011010;
+			// instruction.opb		= 32'b 01000001101110011001100110011010;
+			
+			//1.0061 + 3.7000
+			// instruction.rmode 	= round_up;
+			// instruction.fpu_op	= ADD;
+			// instruction.opa		= 32'b 00111111100000000000001000000000;
+			// instruction.opb		= 32'b 01000000011011001100110011001101;
+			
+			//1.0061 / 3.7000
+			instruction.rmode 	= round_up;
+			instruction.fpu_op	= DIV;
+			instruction.opa		= 32'b 00111111100000000000001000000000;
+			instruction.opb		= 32'b 01000000011011001100110011001101;
 			
 			//if true, then stimulus will be taken from file
 			if(file) 
@@ -210,6 +240,12 @@ class stimulus_gen ;
 			
 			sent_queue.push_back(instruction);	
 			
+			//TODO:debug : 
+			//inference: instruction is getting filled in the order of the underlying struct
+				$fwrite(operanda_file,"sent vector =>  %b \n",instruction);
+				$fwrite(operanda_file,"sent split  => opcode : %b, rmode : %b,opa : %0b, opb : %0b \n",instruction.fpu_op,instruction.rmode,instruction.opa, instruction.opb,  );
+
+			
 			// foreach(data_send[i])
 			// begin
 				// data_send[i] = instruction[7:0];
@@ -231,8 +267,8 @@ class stimulus_gen ;
 			//TODO: write round mode and opcode as well
 			if(file) 
 			begin 
-				$fwrite(operanda_file,"%0d\n",instruction.opa);
-				$fwrite(operandb_file,"%0d\n",instruction.opb);
+				//$fwrite(operanda_file,"%0d\n",instruction.opa);
+				//$fwrite(operandb_file,"%0d\n",instruction.opb);
 			end
 		end
 		

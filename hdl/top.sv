@@ -28,7 +28,7 @@
 	reg 	[data_width-1:0]		opa,opb;
 	reg		[2:0]					op_code;
 	reg		[1:0]					round_mode;
-	wire 	[(data_width*2)-1:0] 	result;
+	wire 	[(data_width)-1:0] 		result;
 	wire 	[7:0]					flag_vector;
 
 	//creating interface
@@ -59,9 +59,7 @@
 					   .BUFFER_MAX_ELEMENTS(100)
 					   ) outputpipe(clk);
 					   
-	//XRTL FSM to obtain operands from the HVL side
-	 
-	
+	//XRTL FSM to obtain operands from the HVL side	
 	bit [(data_width*2)+8-1:0]	incoming;
 	bit 						eom=0;
 	reg [7:0] 					ne_valid=0;
@@ -69,6 +67,8 @@
 
 	always@(posedge clk)
 	begin
+	
+	
         fpu_if.fpu_i.opa	<= opa;
 		fpu_if.fpu_i.opb	<= opb;
 		$cast(fpu_if.fpu_i.rmode,round_mode);
@@ -85,18 +85,27 @@
         else 
         begin     
 			
-				outputpipe.send(1,{flag_vector,result},eom);   
+				outputpipe.send(1,{result},eom);   
 				   
 				if(!eom)
 					inputpipe.receive(1,ne_valid,incoming,eom);
 				
-				round_mode	<= incoming[68:66];
-				op_code 	<= incoming[65:64];
+				op_code		<= incoming[68:66];
+				round_mode 	<= incoming[65:64];
 				opa 		<= incoming[63:32];
 				opb 		<= incoming[31:0];
 				issued 		<=1;
 		end
+		
+		//TODO:debug
+		//************************
+		$display("result %b, flage %b",result,flag_vector);
+		//$display("opa %b, opb %b, op_code %b, round_mode %b",opa,opb,op_code,round_mode);
+		//$display("opa %b, opb %b, op_code %b, round_mode %b",fpu_if.fpu_i.opa,fpu_if.fpu_i.opb,fpu_if.fpu_i.fpu_op,fpu_if.fpu_i.rmode);
+		//************************
         
 	end
+	
+	
 
 endmodule
