@@ -4,14 +4,14 @@ MODE ?= puresim
 #MODE ?= veloce
 
 VLOG = \
-        hdl/top.sv \
-        hdl/fpu.sv \
 		hdl/definitions.sv \
 		hdl/except.sv \
 		hdl/post_norm.sv \
 		hdl/pre_norm.sv \
 		hdl/pre_norm_fmul.sv \
 		hdl/primitives.sv \
+        hdl/fpu.sv \
+        hdl/top.sv \
 
 compile:
 	vlib $(MODE)work
@@ -30,7 +30,7 @@ endif
 
 
 sim:
-	vsim -c fpu_hvl top TbxSvManager +RUNS=200 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
+	vsim -c fpu_hvl top TbxSvManager +RUNS=100 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
 
 clean:
 	rm -rf work transcript vsim.wlf dpi.so modelsim.ini output.log result.TBX tbxsvlink.log

@@ -1,9 +1,8 @@
 // This is HVL for FPU verification environment that runs on the Workstation
 
-//`timescale 1ns / 100ps
 
-import scemi_pipes_pkg::*; // For trans-language TLM channels.
-import definitions::*;
+import scemi_pipes_pkg::*; 	// For trans-language TLM channels.
+import definitions::*;		// Provides custom type such as float_t, fpu_instruction_t
 
 //File Handlers
 int		operanda_file;
@@ -16,7 +15,7 @@ localparam data_width =	32;
 //SystemVerilog Queue to store test cases that were sent
 //These are popped and given to the golden model once a result is obtained from the emulator 
 //DUT takes a total of 69 bits as input, closest byte value is 9 bytes
-fpu_instruction_t sent_queue [$];
+fpu_instruction_t 	sent_queue [$];
 
 //Since DUT outputs a result of "zero" during reset, it is ignored by startup variable
 logic startup = 0;
@@ -38,7 +37,7 @@ class scoreboard;
 	float_t 					opa;
 	float_t						opb;
 	float_t 					result;
-	float_t						expected_result;
+	shortreal					expected_result;
 	byte						flag_vector; 
 	fpu_instruction_t			instruction;
 	scemi_dynamic_output_pipe 	monitorChannel;
@@ -70,26 +69,26 @@ class scoreboard;
 			//holds the data received from HDL
 			//first 4 bytes hold output of fpu operation
 			//next byte holds the flag vector raised by the operation
-			automatic byte unsigned data_received[] = new[4];
+			//NOTE: depends on the order in which data is sent from HDL side
+			//TODO: make this signed
+			automatic byte unsigned data_received[] = new[5];
 			
 			//receives the data from HDL
 			//bytes are packed in such way that LSByte of the data sent from HDL
 			//will be 0th element of data_received
-			//Note- this task is blocking. Waits here until result is available 
+			//NOTE: this task is blocking. Waits here until result is available 
 			monitorChannel.receive_bytes(1, ne_valid, data_received, eom_flag);
 			
-			//unpacking the data_received
+			//unpacking the the bytes from data_received
 			//last Byte goes to flag vector
 			//remaining bytes go to result of type float_t
 			//NOTE: this logic depends on the order in which data is sent from HDL
-			{result} = { << byte {data_received}};
+			{flag_vector,result} = { << byte {data_received}};
 			
 			//TODO:debug
-			//inference: received data is not correct
+			//inference: received data is correct
 			$fwrite(output_file,"flag : %b , result : %b ", flag_vector,result);
-			
-		
-			
+				
 			//pop out the instruction which was sent earlier 
 			instruction=sent_queue.pop_front;	
 			
@@ -107,10 +106,10 @@ class scoreboard;
 			
 			//TODO: write proper logic
 			//performing addition of the operands
-			expected_result = $shortrealtobits(shortreal'(instruction.opa) + shortreal'(instruction.opb)); 
+			expected_result = $bitstoshortreal(instruction.opa) + $bitstoshortreal(instruction.opb); 
 
 			//checking the correctness of the received result
-			if(expected_result !== result)		//If obtained and expected products don't match, its an error
+			if(expected_result != $bitstoshortreal(result))		//If obtained and expected products don't match, its an error
 			begin
 			//$display("Error: opa=%f opb=%f expected result=%f obtained product =%f",instruction.opa,instruction.opb,expected_result,result);
 			error_count++;
@@ -125,8 +124,7 @@ class scoreboard;
 			
 			if(eom_flag)
 				$finish;
-			// if(!startup)	//The first result sent is zero (in reset). Its ignored 
-			// startup = 1;
+			
 		end	
 	endtask
 

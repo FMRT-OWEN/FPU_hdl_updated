@@ -85,7 +85,7 @@
         else 
         begin     
 			
-				outputpipe.send(1,{result},eom);   
+				outputpipe.send(1,{flag_vector,result},eom);   
 				   
 				if(!eom)
 					inputpipe.receive(1,ne_valid,incoming,eom);
