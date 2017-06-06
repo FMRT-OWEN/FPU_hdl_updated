@@ -12,13 +12,12 @@ int		output_file;
 //local parameters
 localparam data_width =	32;
 
-//SystemVerilog Queue to store test cases that were sent
+//SystemVerilog Queue to store test cases that were sent to the DUT
 //These are popped and given to the golden model once a result is obtained from the emulator 
-//DUT takes a total of 69 bits as input, closest byte value is 9 bytes
 fpu_instruction_t 	sent_queue [$];
 
 //Since DUT outputs a result of "zero" during reset, it is ignored by startup variable
-logic startup = 0;
+int startup = 0;
 
 //When debug is 1, results are printed on terminal
 parameter debug=0;
@@ -36,7 +35,7 @@ class scoreboard;
 	//Class attributes
 	float_t 					opa;
 	float_t						opb;
-	float_t 					result;
+	float_t 					actual_result;
 	shortreal					expected_result;
 	byte						flag_vector; 
 	fpu_instruction_t			instruction;
@@ -57,6 +56,21 @@ class scoreboard;
 		
 	end
 	endfunction
+	
+	//generates the expected result based on the inputs given to the DUT
+	function void get_expected_result();
+		
+		case(instruction.fpu_op)
+		
+			ADD		:	expected_result = $bitstoshortreal(instruction.opa) + $bitstoshortreal(instruction.opb); 
+			SUB		:	expected_result = $bitstoshortreal(instruction.opa) - $bitstoshortreal(instruction.opb); 
+			MULT	:	expected_result = $bitstoshortreal(instruction.opa) * $bitstoshortreal(instruction.opb); 
+			DIV		:	expected_result = $bitstoshortreal(instruction.opa) / $bitstoshortreal(instruction.opb); 
+		
+		endcase
+	
+	endfunction
+	
 
 	task run();
 		
@@ -67,59 +81,67 @@ class scoreboard;
 		begin
 			
 			//holds the data received from HDL
-			//first 4 bytes hold output of fpu operation
-			//next byte holds the flag vector raised by the operation
-			//NOTE: depends on the order in which data is sent from HDL side
-			//TODO: make this signed
+			//first 4 bytes hold output of fpu operation in reverse byte order
+			//last byte holds the flag vector raised by the floating point operation
+			//NOTE: the above arrangement depends on the order in which data is sent from HDL side
+			//TODO: make this signed in order to process signed outputs 
 			automatic byte unsigned data_received[] = new[5];
 			
 			//receives the data from HDL
-			//bytes are packed in such way that LSByte of the data sent from HDL
-			//will be 0th element of data_received
+			//bytes are sent from HDL in such way that LSByte of the data sent from HDL
+			//will be 0th element of data_received, and MSByte will be the last element
 			//NOTE: this task is blocking. Waits here until result is available 
 			monitorChannel.receive_bytes(1, ne_valid, data_received, eom_flag);
 			
-			//unpacking the the bytes from data_received
+			//unpacking the bytes in data_received from right to left order
 			//last Byte goes to flag vector
-			//remaining bytes go to result of type float_t
+			//remaining bytes, i.e 4 to 1 bytes go to actual_result of type float_t
 			//NOTE: this logic depends on the order in which data is sent from HDL
-			{flag_vector,result} = { << byte {data_received}};
+			{flag_vector,actual_result} = { << byte {data_received}};			
 			
-			//TODO:debug
-			//inference: received data is correct
-			$fwrite(output_file,"flag : %b , result : %b ", flag_vector,result);
-				
-			//pop out the instruction which was sent earlier 
-			instruction=sent_queue.pop_front;	
-			
-			//TODO: debug
-			//*****************************************
-			//inference: the popped instruction is same as pushed one
-			//$fwrite(operanda_file,"popped => opa : %0b, opb : %0b, rmode : %b, opcode : %b \n",instruction.opa, instruction.opb, instruction.rmode, instruction.fpu_op);
-			foreach(data_received[i])
+			//don't compare the results during the initial priming of pipeline
+			if (startup <=5)
 			begin
-				$fwrite(output_file,"data received %b , ", data_received[i]);
-			end 
-			$fwrite(output_file,"\n");
-			
-			//**********************************
-			
-			//TODO: write proper logic
-			//performing addition of the operands
-			expected_result = $bitstoshortreal(instruction.opa) + $bitstoshortreal(instruction.opb); 
-
-			//checking the correctness of the received result
-			if(expected_result != $bitstoshortreal(result))		//If obtained and expected products don't match, its an error
-			begin
-			//$display("Error: opa=%f opb=%f expected result=%f obtained product =%f",instruction.opa,instruction.opb,expected_result,result);
-			error_count++;
+				startup++;
+				//$display("inside if, startup = %d",startup);
 			end
+			else
+			begin
+			
+				//pop out the instruction which was sent earlier 
+				instruction=sent_queue.pop_front;	
+				
+				//TODO: debug
+				//*****************************************
+				//inference: the popped instruction is same as pushed one
+				//$fwrite(operanda_file,"popped => opa : %0b, opb : %0b, rmode : %b, opcode : %b \n",instruction.opa, instruction.opb, instruction.rmode, instruction.fpu_op);
+				// foreach(data_received[i])
+				// begin
+					// $fwrite(output_file,"data received %b , ", data_received[i]);
+				// end 
+				// $fwrite(output_file,"\n");
+				
+				//**********************************
+				
+				
+				get_expected_result();
 
+				//checking the correctness of the received actual_result
+				if($shortrealtobits(expected_result) != actual_result)		//If obtained and expected products don't match, its an error
+				begin
+				$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
+					$bitstoshortreal(instruction.opa),
+					$bitstoshortreal(instruction.opb),
+					$shortrealtobits(expected_result),actual_result);
+					
+				error_count++;
+				end
+			end
 			if(file)	//Write to file if file I/O is enabled 
-			//$fwrite(output_file,"%0b\n",result);
+				$fwrite(output_file,"flag : %b , actual_result : %f, expected result : %f \n", flag_vector,$bitstoshortreal(actual_result),expected_result);
 		
 			if(debug)	//Display in debug 
-			$display("opa=%f opb=%f Expected result=%f Obtained result =%f",instruction.opa,instruction.opb,expected_result,result);
+			$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",instruction.opa,instruction.opb,expected_result,actual_result);
 			// end
 			
 			if(eom_flag)
@@ -258,7 +280,7 @@ class stimulus_gen ;
 			//NOTE: this logic depends on the order of memebers in fpu_instruction_t struct
 			data_send= {<< byte {3'b0,instruction}};
 			
-			//filling the input pipe with data_send
+			//filling the input pipe with data_send		
 			driverChannel.send_bytes(1, data_send, 0);
 			
 			//write the operands to file is the file flag is set
