@@ -60,6 +60,9 @@ class scoreboard;
 	//generates the expected result based on the inputs given to the DUT
 	function void get_expected_result();
 		
+		//pop the instruction which was sent earlier 
+		instruction=sent_queue.pop_front;	
+		
 		case(instruction.fpu_op)
 		
 			ADD		:	expected_result = $bitstoshortreal(instruction.opa) + $bitstoshortreal(instruction.opb); 
@@ -71,7 +74,22 @@ class scoreboard;
 	
 	endfunction
 	
-
+	function void check_results();
+		
+		//checking the correctness of the received actual_result
+		if($shortrealtobits(expected_result) != actual_result)		//If obtained and expected products don't match, its an error
+		begin
+		$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
+			$bitstoshortreal(instruction.opa),
+			$bitstoshortreal(instruction.opb),
+			$shortrealtobits(expected_result),actual_result);
+			
+		error_count++;
+		
+		end
+		
+	endfunction
+	
 	task run();
 		
 		bit 	eom_flag; 
@@ -107,9 +125,6 @@ class scoreboard;
 			end
 			else
 			begin
-			
-				//pop out the instruction which was sent earlier 
-				instruction=sent_queue.pop_front;	
 				
 				//TODO: debug
 				//*****************************************
@@ -123,19 +138,13 @@ class scoreboard;
 				
 				//**********************************
 				
-				
+				//generates the expected result
 				get_expected_result();
-
-				//checking the correctness of the received actual_result
-				if($shortrealtobits(expected_result) != actual_result)		//If obtained and expected products don't match, its an error
-				begin
-				$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-					$bitstoshortreal(instruction.opa),
-					$bitstoshortreal(instruction.opb),
-					$shortrealtobits(expected_result),actual_result);
-					
-				error_count++;
-				end
+				
+				//checks the correctness of the expected and obtained results
+				//increments the error_count if there is an error
+				check_results();
+				
 			end
 			if(file)	//Write to file if file I/O is enabled 
 				$fwrite(output_file,"flag : %b , actual_result : %f, expected result : %f \n", flag_vector,$bitstoshortreal(actual_result),expected_result);
