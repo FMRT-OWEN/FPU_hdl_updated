@@ -74,10 +74,12 @@ class scoreboard;
 	
 	endfunction
 	
+	//checks the correctness of the expected and obtained results
+	//increments the error_count if there is an error
 	function void check_results();
 		
 		//checking the correctness of the received actual_result
-		if($shortrealtobits(expected_result) != actual_result)		//If obtained and expected products don't match, its an error
+		if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
 		begin
 		$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
 			$bitstoshortreal(instruction.opa),
