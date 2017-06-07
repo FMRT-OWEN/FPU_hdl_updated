@@ -77,7 +77,7 @@ class scoreboard;
 	
 	//checks the correctness of the expected and obtained results
 	//increments the error_count if there is an error
-	function void check_results();
+	function void verify_results();
 		
 		//checking the correctness of the actual_result
 		if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
@@ -150,7 +150,7 @@ class scoreboard;
 				
 				//checks the correctness of the expected and obtained results
 				//increments the error_count if there is an error
-				check_results();
+				verify_results();
 				
 			end
 			
