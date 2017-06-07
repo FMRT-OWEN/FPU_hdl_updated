@@ -1,4 +1,4 @@
-`timescale 1ns / 100ps
+
 package definitions;
 
 /* FPU Operations (fpu_op):

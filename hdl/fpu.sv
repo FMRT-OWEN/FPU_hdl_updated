@@ -1,4 +1,4 @@
-`timescale 1ns / 100ps
+
 
 import definitions::*; // import package into $unit space 
 
