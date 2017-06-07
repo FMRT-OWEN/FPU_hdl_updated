@@ -59,7 +59,7 @@ class scoreboard;
 	endfunction
 	
 	//generates the expected result based on the inputs given to the DUT
-	function void get_expected_result();
+	function void generate_expected_result();
 		
 		//pop the instruction which was sent earlier 
 		instruction=sent_queue.pop_front;	
@@ -146,7 +146,7 @@ class scoreboard;
 			begin
 				
 				//generates the expected result
-				get_expected_result();
+				generate_expected_result();
 				
 				//checks the correctness of the expected and obtained results
 				//increments the error_count if there is an error
