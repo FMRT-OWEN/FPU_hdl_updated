@@ -8,6 +8,7 @@ import definitions::*;		// Provides custom type such as float_t, fpu_instruction
 int		operanda_file;
 int		operandb_file;
 int		output_file;
+int		input_file;
 
 //local parameters
 localparam data_width =	32;
@@ -78,18 +79,35 @@ class scoreboard;
 	//increments the error_count if there is an error
 	function void check_results();
 		
-		//checking the correctness of the received actual_result
+		//checking the correctness of the actual_result
 		if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
 		begin
-		$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-			$bitstoshortreal(instruction.opa),
-			$bitstoshortreal(instruction.opb),
-			$shortrealtobits(expected_result),actual_result);
-			
-		error_count++;
+			$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
+					$bitstoshortreal(instruction.opa), $bitstoshortreal(instruction.opb),
+					$shortrealtobits(expected_result),actual_result);
+				
+			error_count++;
 		
 		end
 		
+	endfunction
+
+	function void write_outputs(bit float_format=1);
+	
+		if(file)
+		begin
+			case (float_format)
+								
+				0 : $fwrite(output_file,"flag : %b , actual_result : %b, expected result : %b \n", 
+					flag_vector,actual_result,$shortrealtobits(expected_result));
+					
+				1 : $fwrite(output_file,"flag : %b , \tactual_result : %20f, \texpected result : %20f \n", 
+					flag_vector,$bitstoshortreal(actual_result),expected_result);
+				
+			endcase
+			
+		end
+	
 	endfunction
 	
 	task run();
@@ -123,22 +141,9 @@ class scoreboard;
 			if (startup <=5)
 			begin
 				startup++;
-				//$display("inside if, startup = %d",startup);
 			end
 			else
 			begin
-				
-				//TODO: debug
-				//*****************************************
-				//inference: the popped instruction is same as pushed one
-				//$fwrite(operanda_file,"popped => opa : %0b, opb : %0b, rmode : %b, opcode : %b \n",instruction.opa, instruction.opb, instruction.rmode, instruction.fpu_op);
-				// foreach(data_received[i])
-				// begin
-					// $fwrite(output_file,"data received %b , ", data_received[i]);
-				// end 
-				// $fwrite(output_file,"\n");
-				
-				//**********************************
 				
 				//generates the expected result
 				get_expected_result();
@@ -148,12 +153,11 @@ class scoreboard;
 				check_results();
 				
 			end
-			if(file)	//Write to file if file I/O is enabled 
-				$fwrite(output_file,"flag : %b , actual_result : %f, expected result : %f \n", flag_vector,$bitstoshortreal(actual_result),expected_result);
+			
+			write_outputs();
 		
 			if(debug)	//Display in debug 
-			$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",instruction.opa,instruction.opb,expected_result,actual_result);
-			// end
+				$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",instruction.opa,instruction.opb,expected_result,actual_result);
 			
 			if(eom_flag)
 				$finish;
@@ -163,7 +167,34 @@ class scoreboard;
 
 endclass
 
+class random_instruction;
+
+rand fpu_instruction_t		instruction;
+
+//constraint the input vectors
+constraint exponent_c {
 	
+	//constrain operand a
+	instruction.opa.sign inside {[0:1]};
+	instruction.opa.exponent inside {[110:144]};
+	instruction.opa.mantissa inside {[1:2**23-1]};
+	
+	//constrain operand b
+	instruction.opb.sign inside {[0:1]};
+	instruction.opb.exponent inside {[110:144]};
+	instruction.opb.mantissa inside {[1:2**23-1]};
+
+	//constrain round mode and op code
+	instruction.rmode inside {[0:2]};
+	instruction.fpu_op dist {
+	0:/25,
+	1:/25,
+	2:/25,
+	3:/25
+ };
+}
+
+endclass	
 
 //Stimulus (test) generation class 
 //This generates testecases with SV inline randomization 
@@ -174,46 +205,69 @@ endclass
 class stimulus_gen ;
 
 	// handle is driver channel , the handle is to my pipe
-	scemi_dynamic_input_pipe 	driverChannel;
-	fpu_instruction_t			instruction;
+	scemi_dynamic_input_pipe 		driverChannel;
+	random_instruction				r_instruction;
 	
+		
 	//Constructor
 	function new();			
+	begin
+		// connecting the handle to the input pipe, input pipe is the instance in  hdl
+		driverChannel 		= new ("top.inputpipe");
+		r_instruction		= new();
+		//TODO: randomize later
+		//23.2 + 23.2	
+		// instruction.rmode 	= round_up;
+		// instruction.fpu_op	= ADD;
+		// instruction.opa		= 32'b 01000001101110011001100110011010;
+		// instruction.opb		= 32'b 01000001101110011001100110011010;
+		
+		//1.0061 + 3.7000
+		// instruction.rmode 	= round_up;
+		// instruction.fpu_op	= ADD;
+		// instruction.opa		= 32'b 00111111100000000000001000000000;
+		// instruction.opb		= 32'b 01000000011011001100110011001101;
+		
+		//1.0061 / 3.7000
+		// instruction.rmode 	= round_up;
+		// instruction.fpu_op	= DIV;
+		// instruction.opa		= 32'b 00111111100000000000001000000000;
+		// instruction.opb		= 32'b 01000000011011001100110011001101;
+		
+		//if true, then stimulus will be taken from file
+		if(file) 
+		begin 	
+			operanda_file=$fopen("operanda.txt","w");
+			operandb_file=$fopen("operandb.txt","w");
+			input_file = $fopen("input.txt","w");
+			
+			$fwrite(input_file,"Inputs given to DUT\n");
+			$fwrite(operanda_file,"operanda\n");
+			$fwrite(operandb_file,"operandb\n");
+		end
+		
+	end
+	endfunction
+
+	function void write_inputs(bit float_format=1);
+		if(file)
 		begin
-			// connecting the handle to the input pipe, input pipe is the instance in  hdl
-			driverChannel 		= new ("top.inputpipe");
-			
-			//TODO: randomize later
-			//23.2 + 23.2	
-			// instruction.rmode 	= round_up;
-			// instruction.fpu_op	= ADD;
-			// instruction.opa		= 32'b 01000001101110011001100110011010;
-			// instruction.opb		= 32'b 01000001101110011001100110011010;
-			
-			//1.0061 + 3.7000
-			// instruction.rmode 	= round_up;
-			// instruction.fpu_op	= ADD;
-			// instruction.opa		= 32'b 00111111100000000000001000000000;
-			// instruction.opb		= 32'b 01000000011011001100110011001101;
-			
-			//1.0061 / 3.7000
-			instruction.rmode 	= round_up;
-			instruction.fpu_op	= DIV;
-			instruction.opa		= 32'b 00111111100000000000001000000000;
-			instruction.opb		= 32'b 01000000011011001100110011001101;
-			
-			//if true, then stimulus will be taken from file
-			if(file) 
-			begin 	
-				operanda_file=$fopen("operanda.txt","w");
-				operandb_file=$fopen("operandb.txt","w");
-				$fwrite(operanda_file,"operanda\n");
-				$fwrite(operandb_file,"operandb\n");
-			end
+			case (float_format)
+								
+				0 : $fwrite(input_file,"opcode : %b, rmode : %b,opa : %b, opb : %b \n",
+					r_instruction.instruction.fpu_op, r_instruction.instruction.rmode,
+					r_instruction.instruction.opa, r_instruction.instruction.opb );
+					
+				1 : $fwrite(input_file,"opcode : %b, rmode : %b,\topa : %20f, \topb : %20f \n",
+					r_instruction.instruction.fpu_op, r_instruction.instruction.rmode,
+					$bitstoshortreal(r_instruction.instruction.opa), 
+					$bitstoshortreal(r_instruction.instruction.opb) );
+				
+			endcase
 			
 		end
 	endfunction
-
+	
 	task run;
 		input [31:0]	runs;		
 		input [15:0]	signs;
@@ -269,12 +323,17 @@ class stimulus_gen ;
 						end
 			endcase	*/
 			
-			sent_queue.push_back(instruction);	
+			r_instruction.randomize();			
+			
+			sent_queue.push_back(r_instruction.instruction);	
+			
+			write_inputs();
 			
 			//TODO:debug : 
 			//inference: instruction is getting filled in the order of the underlying struct
-				$fwrite(operanda_file,"sent vector =>  %b \n",instruction);
-				$fwrite(operanda_file,"sent split  => opcode : %b, rmode : %b,opa : %0b, opb : %0b \n",instruction.fpu_op,instruction.rmode,instruction.opa, instruction.opb,  );
+			//$fwrite(operanda_file,"sent vector =>  %b \n",r_instruction.instruction);
+			
+			
 
 			
 			// foreach(data_send[i])
@@ -289,18 +348,11 @@ class stimulus_gen ;
 			//followed by 4 bytes of opb
 			//total bytes packed = 9 bytes
 			//NOTE: this logic depends on the order of memebers in fpu_instruction_t struct
-			data_send= {<< byte {3'b0,instruction}};
+			data_send= {<< byte {3'b0,r_instruction.instruction}};
 			
 			//filling the input pipe with data_send		
 			driverChannel.send_bytes(1, data_send, 0);
 			
-			//write the operands to file is the file flag is set
-			//TODO: write round mode and opcode as well
-			if(file) 
-			begin 
-				//$fwrite(operanda_file,"%0d\n",instruction.opa);
-				//$fwrite(operandb_file,"%0d\n",instruction.opb);
-			end
 		end
 		
 		//when requried number of runs are reached, send eom flag as 1
