@@ -70,6 +70,7 @@ class scoreboard;
 			SUB		:	expected_result = $bitstoshortreal(instruction.opa) - $bitstoshortreal(instruction.opb); 
 			MULT	:	expected_result = $bitstoshortreal(instruction.opa) * $bitstoshortreal(instruction.opb); 
 			DIV		:	expected_result = $bitstoshortreal(instruction.opa) / $bitstoshortreal(instruction.opb); 
+			SQRT	:	expected_result = $sqrt($bitstoshortreal(instruction.opa)); 
 		
 		endcase
 	
@@ -138,7 +139,7 @@ class scoreboard;
 			{flag_vector,actual_result} = { << byte {data_received}};			
 			
 			//don't compare the results during the initial priming of pipeline
-			if (startup < 5)
+			if (startup <= 5 )
 			begin
 				startup++;
 			end
@@ -187,10 +188,11 @@ constraint exponent_c {
 	//constrain round mode and op code
 	instruction.rmode inside {[0:2]};
 	instruction.fpu_op dist {
-	0:/25,
-	1:/25,
-	2:/25,
-	3:/25
+	0:/20,
+	1:/20,
+	2:/20,
+	3:/20,
+	4:/20
  };
 }
 
@@ -258,8 +260,8 @@ class stimulus_gen ;
 					r_instruction.instruction.fpu_op, r_instruction.instruction.rmode,
 					r_instruction.instruction.opa, r_instruction.instruction.opb );
 					
-				1 : $fwrite(input_file,"opcode : %b, rmode : %b,\topa : %20f, \topb : %20f \n",
-					r_instruction.instruction.fpu_op, r_instruction.instruction.rmode,
+				1 : $fwrite(input_file,"opcode : %5s, rmode : %20s,\topa : %20f, \topb : %20f \n",
+					r_instruction.instruction.fpu_op.name(), r_instruction.instruction.rmode.name(),
 					$bitstoshortreal(r_instruction.instruction.opa), 
 					$bitstoshortreal(r_instruction.instruction.opb) );
 				

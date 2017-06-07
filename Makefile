@@ -11,6 +11,8 @@ VLOG = \
 		hdl/pre_norm_fmul.sv \
 		hdl/primitives.sv \
 		hdl/fpu_interface.sv \
+		hdl/FpSqrt.sv \
+		hdl/primitives.sv \
         hdl/fpu.sv \
         hdl/top.sv \
 
