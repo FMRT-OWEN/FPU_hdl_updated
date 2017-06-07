@@ -138,7 +138,7 @@ class scoreboard;
 			{flag_vector,actual_result} = { << byte {data_received}};			
 			
 			//don't compare the results during the initial priming of pipeline
-			if (startup <=5)
+			if (startup < 5)
 			begin
 				startup++;
 			end
@@ -279,49 +279,7 @@ class stimulus_gen ;
 		
 		//runs number of testcases	wanted to generate	, that no. of cycles
 		repeat(runs)		
-		begin			
-			
-			//generating operands based on sign 
-			/*case(signs)	
-				   "++": 
-						begin
-							if(randomize(instruction.opa) with {instruction.opa > 0;instruction.opa < ((2**31)-1);});
-							//if(debug) $display("m=%d",m);
-							if(randomize(instruction.opb) with { instruction.opb>0;instruction.opb<((2**31)-1);});
-							//if(debug) $display("r=%d",r);
-						end
-					
-					"--":
-						begin
-							if(randomize(instruction.opa) with {instruction.opa<0;instruction.opa>(-(2**31));});
-							//if(debug) $display("m=%d",m);
-							if(randomize(instruction.opb) with {instruction.opb>(-(2**31));});
-						end
-  
-					"+-":
-						begin
-							if(randomize(instruction.opa) with { instruction.opa>0;instruction.opa<((2**31)-1);});
-							//if(debug) $display("m=%d",m);
-							if(randomize(instruction.opb) with { instruction.opb<0;instruction.opb>((-2**31));});
-							//if(debug) $display("m=%d",m);         
-						end 
-						
-					"-+":
-						begin
-							if(randomize(instruction.opa) with {instruction.opa<0;instruction.opa>(-(2**31));});
-							//if(debug) $display("m=%d",m);
-							if(randomize(instruction.opb) with {instruction.opb>0;instruction.opb<((2**31)-1);});
-							//if(debug) $display("m=%d",m);       
-						end
-  
-				default:
-						begin
-							if(randomize(instruction.opa) with { instruction.opa>0;instruction.opa<50;});
-							//if(debug) $display("m=%d",m);
-							if(randomize(instruction.opb) with { instruction.opb>0;instruction.opb<20;});
-							//if(debug) $display("m=%d",m);								
-						end
-			endcase	*/
+		begin
 			
 			r_instruction.randomize();			
 			

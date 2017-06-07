@@ -25,9 +25,6 @@
 	localparam data_width = 32;
 	
 	//DUT Instantiation 
-	reg 	[data_width-1:0]		opa,opb;
-	reg		[2:0]					op_code;
-	reg		[1:0]					round_mode;
 	wire 	[(data_width)-1:0] 		result;
 	wire 	[7:0]					flag_vector;
 
@@ -47,7 +44,7 @@
 	//1 byte for opcode and rounding mode
 	scemi_input_pipe #(.BYTES_PER_ELEMENT(9),
                    .PAYLOAD_MAX_ELEMENTS(1),
-                   .BUFFER_MAX_ELEMENTS(100)
+                   .BUFFER_MAX_ELEMENTS(500)
                    ) inputpipe(clk);
 				   
 	//Output Pipe Instantiation 
@@ -56,7 +53,7 @@
 	//next byte holds the flag vector raised by the operation
 	scemi_output_pipe #(.BYTES_PER_ELEMENT(5),
 					   .PAYLOAD_MAX_ELEMENTS(1),
-					   .BUFFER_MAX_ELEMENTS(100)
+					   .BUFFER_MAX_ELEMENTS(500)
 					   ) outputpipe(clk);
 					   
 	//XRTL FSM to obtain operands from the HVL side	
@@ -67,19 +64,13 @@
 
 	always@(posedge clk)
 	begin
-	
-	
-        fpu_if.fpu_i.opa	<= opa;
-		fpu_if.fpu_i.opb	<= opb;
-		$cast(fpu_if.fpu_i.rmode,round_mode);
-		$cast(fpu_if.fpu_i.fpu_op,op_code);
 		
         if(reset)
         begin
-                opa 		<= '0;
-                opb 		<= '0;
-				op_code 	<= '0;
-				round_mode 	<= '0;
+                fpu_if.fpu_i.opa 		<= '0;
+				fpu_if.fpu_i.opb 		<= '0;
+				$cast(fpu_if.fpu_i.rmode,'0);
+				$cast(fpu_if.fpu_i.fpu_op,'0);
                
         end
         else 
@@ -89,17 +80,20 @@
 				   
 				if(!eom)
 					inputpipe.receive(1,ne_valid,incoming,eom);
-				
-				op_code		<= incoming[68:66];
-				round_mode 	<= incoming[65:64];
-				opa 		<= incoming[63:32];
-				opb 		<= incoming[31:0];
+					
+				fpu_if.fpu_i.opa 		<= incoming[63:32];
+				fpu_if.fpu_i.opb 		<= incoming[31:0];
+				$cast(fpu_if.fpu_i.rmode,incoming[65:64]);
+				$cast(fpu_if.fpu_i.fpu_op,incoming[68:66]);
 				issued 		<=1;
 		end
 		
 		//TODO:debug
 		//************************
-		$display("result %b, flage %b",result,flag_vector);
+		`ifdef DEBUG
+			$display("opa %f, opb %f, op_code %b, round_mode %b, result %f, flage %b",
+					$bitstoshortreal(opa),$bitstoshortreal(opb),op_code,round_mode,$bitstoshortreal(result),flag_vector);
+		`endif
 		//$display("opa %b, opb %b, op_code %b, round_mode %b",opa,opb,op_code,round_mode);
 		//$display("opa %b, opb %b, op_code %b, round_mode %b",fpu_if.fpu_i.opa,fpu_if.fpu_i.opb,fpu_if.fpu_i.fpu_op,fpu_if.fpu_i.rmode);
 		//************************
