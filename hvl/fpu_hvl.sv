@@ -40,7 +40,7 @@ class scoreboard;
 	float_t						opb;
 	float_t 					actual_result;
 	shortreal					expected_result;
-	byte						flag_vector; 
+	byte						actual_flag_vector; 
 	fpu_instruction_t			sent_instruction;
 	scemi_dynamic_output_pipe 	monitorChannel;
 	
@@ -107,18 +107,18 @@ class scoreboard;
 				0 : $fwrite(output_file,"opcode : %4s, rmode : %18s,\topa : %b, \topb : %b \tflag : %b , actual_result : %b_%b_%b, expected result : %b %b %b \n", 
 					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
 					sent_instruction.opa, sent_instruction.opb,
-					flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					actual_flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 				//writes everything in floating point format
 				1 : $fwrite(output_file,"opcode : %4s, rmode : %18s, opa : %15f, opb : %15f, flag : %b , actual_result : %15f, expected result : %15f \n", 
 					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
 					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
-					flag_vector,$bitstoshortreal(actual_result),expected_result);
+					actual_flag_vector,$bitstoshortreal(actual_result),expected_result);
 				
 				//writes only rounding mode and output in binary format
 				2 : $fwrite(output_file,"rmode : %18s,flag : %b , actual_result : %b %b %b, expected result : %b %b %b \n",
-					sent_instruction.rmode.name(),flag_vector,
+					sent_instruction.rmode.name(),actual_flag_vector,
 					actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
@@ -153,7 +153,7 @@ class scoreboard;
 			//last Byte goes to flag vector
 			//remaining bytes, i.e 4 to 1 bytes go to actual_result of type float_t
 			//NOTE: this logic depends on the order in which data is sent from HDL
-			{flag_vector,actual_result} = { << byte {data_received}};			
+			{actual_flag_vector,actual_result} = { << byte {data_received}};			
 			
 			//don't compare the results during the initial priming of pipeline
 			if (startup <= 5 )
