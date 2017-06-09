@@ -1,8 +1,8 @@
 // This is HVL for FPU verification environment that runs on the Workstation
 
-
 import scemi_pipes_pkg::*; 	// For trans-language TLM channels.
 import definitions::*;		// Provides custom type such as float_t, fpu_instruction_t
+import randomizer::*;
 
 //File Handlers
 int		operanda_file;
@@ -23,9 +23,11 @@ int startup = 0;
 //When debug is 1, results are printed on terminal
 parameter debug=0;
 
-//When file is 1, multiplicand, multiplier and results are written to text files
+//When file is 1, the inputs given to DUT, 
+//obtained and expected outputs  are written to text files
 parameter file = 1;
 
+//keeps track of total number of errors
 int error_count;
 
 //Scoreboard class
@@ -39,7 +41,7 @@ class scoreboard;
 	float_t 					actual_result;
 	shortreal					expected_result;
 	byte						flag_vector; 
-	fpu_instruction_t			instruction;
+	fpu_instruction_t			sent_instruction;
 	scemi_dynamic_output_pipe 	monitorChannel;
 	
 	//constructor
@@ -62,15 +64,15 @@ class scoreboard;
 	function void generate_expected_result();
 		
 		//pop the instruction which was sent earlier 
-		instruction=sent_queue.pop_front;	
+		sent_instruction=sent_queue.pop_front;	
 		
-		case(instruction.fpu_op)
+		case(sent_instruction.fpu_op)
 		
-			ADD		:	expected_result = $bitstoshortreal(instruction.opa) + $bitstoshortreal(instruction.opb); 
-			SUB		:	expected_result = $bitstoshortreal(instruction.opa) - $bitstoshortreal(instruction.opb); 
-			MULT	:	expected_result = $bitstoshortreal(instruction.opa) * $bitstoshortreal(instruction.opb); 
-			DIV		:	expected_result = $bitstoshortreal(instruction.opa) / $bitstoshortreal(instruction.opb); 
-			SQRT	:	expected_result = $sqrt($bitstoshortreal(instruction.opa)); 
+			ADD		:	expected_result = $bitstoshortreal(sent_instruction.opa) + $bitstoshortreal(sent_instruction.opb); 
+			SUB		:	expected_result = $bitstoshortreal(sent_instruction.opa) - $bitstoshortreal(sent_instruction.opb); 
+			MULT	:	expected_result = $bitstoshortreal(sent_instruction.opa) * $bitstoshortreal(sent_instruction.opb); 
+			DIV		:	expected_result = $bitstoshortreal(sent_instruction.opa) / $bitstoshortreal(sent_instruction.opb); 
+			SQRT	:	expected_result = $sqrt($bitstoshortreal(sent_instruction.opa)); 
 		
 		endcase
 	
@@ -84,26 +86,41 @@ class scoreboard;
 		if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
 		begin
 			$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-					$bitstoshortreal(instruction.opa), $bitstoshortreal(instruction.opb),
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
 					$shortrealtobits(expected_result),actual_result);
 				
 			error_count++;
 		
 		end
 		
+		
 	endfunction
 
-	function void write_outputs(bit float_format=1);
+	function void write_outputs(int float_format=1);
 	
+		bit [31:0] expected_result_bits = $shortrealtobits(expected_result);
 		if(file)
 		begin
 			case (float_format)
-								
-				0 : $fwrite(output_file,"flag : %b , actual_result : %b, expected result : %b \n", 
-					flag_vector,actual_result,$shortrealtobits(expected_result));
-					
-				1 : $fwrite(output_file,"flag : %b , \tactual_result : %20f, \texpected result : %20f \n", 
+				
+				//writes everything in binary format
+				0 : $fwrite(output_file,"opcode : %4s, rmode : %18s,\topa : %b, \topb : %b \tflag : %b , actual_result : %b_%b_%b, expected result : %b %b %b \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					sent_instruction.opa, sent_instruction.opb,
+					flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+				
+				//writes everything in floating point format
+				1 : $fwrite(output_file,"opcode : %4s, rmode : %18s, opa : %15f, opb : %15f, flag : %b , actual_result : %15f, expected result : %15f \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
 					flag_vector,$bitstoshortreal(actual_result),expected_result);
+				
+				//writes only rounding mode and output in binary format
+				2 : $fwrite(output_file,"rmode : %18s,flag : %b , actual_result : %b %b %b, expected result : %b %b %b \n",
+					sent_instruction.rmode.name(),flag_vector,
+					actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 			endcase
 			
@@ -155,10 +172,10 @@ class scoreboard;
 				
 			end
 			
-			write_outputs();
+			write_outputs(2);
 		
 			if(debug)	//Display in debug 
-				$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",instruction.opa,instruction.opb,expected_result,actual_result);
+				$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",sent_instruction.opa,sent_instruction.opb,expected_result,actual_result);
 			
 			if(eom_flag)
 				$finish;
@@ -167,36 +184,7 @@ class scoreboard;
 	endtask
 
 endclass
-
-class random_instruction;
-
-rand fpu_instruction_t		instruction;
-
-//constraint the input vectors
-constraint exponent_c {
 	
-	//constrain operand a
-	instruction.opa.sign inside {[0:1]};
-	instruction.opa.exponent inside {[110:144]};
-	instruction.opa.mantissa inside {[1:2**23-1]};
-	
-	//constrain operand b
-	instruction.opb.sign inside {[0:1]};
-	instruction.opb.exponent inside {[110:144]};
-	instruction.opb.mantissa inside {[1:2**23-1]};
-
-	//constrain round mode and op code
-	instruction.rmode inside {[0:2]};
-	instruction.fpu_op dist {
-	0:/20,
-	1:/20,
-	2:/20,
-	3:/20,
-	4:/20
- };
-}
-
-endclass	
 
 //Stimulus (test) generation class 
 //This generates testecases with SV inline randomization 
@@ -217,24 +205,7 @@ class stimulus_gen ;
 		// connecting the handle to the input pipe, input pipe is the instance in  hdl
 		driverChannel 		= new ("top.inputpipe");
 		r_instruction		= new();
-		//TODO: randomize later
-		//23.2 + 23.2	
-		// instruction.rmode 	= round_up;
-		// instruction.fpu_op	= ADD;
-		// instruction.opa		= 32'b 01000001101110011001100110011010;
-		// instruction.opb		= 32'b 01000001101110011001100110011010;
-		
-		//1.0061 + 3.7000
-		// instruction.rmode 	= round_up;
-		// instruction.fpu_op	= ADD;
-		// instruction.opa		= 32'b 00111111100000000000001000000000;
-		// instruction.opb		= 32'b 01000000011011001100110011001101;
-		
-		//1.0061 / 3.7000
-		// instruction.rmode 	= round_up;
-		// instruction.fpu_op	= DIV;
-		// instruction.opa		= 32'b 00111111100000000000001000000000;
-		// instruction.opb		= 32'b 01000000011011001100110011001101;
+
 		
 		//if true, then stimulus will be taken from file
 		if(file) 
