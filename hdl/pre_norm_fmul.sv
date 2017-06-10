@@ -82,6 +82,28 @@ assign  signb = opb[31];
 assign   expa = opa[30:23];
 assign   expb = opb[30:23];
 
+//----------------------------Assertions-------------------------------------------------------
+property opa_zero;
+@(posedge clk)
+(opa[30:0] == '0) |-> opa_00 
+endproperty
+
+assert_a7 : assert property(opa_zero)	
+		$display("Assertion passed: The opa_00 signal set for zero operands");
+	else
+		$display("opa_00 signal not set when operand has zero value");
+
+//-------------------------------------------------------------------------------------------------
+
+property opb_zero;
+@(posedge clk)
+(opb[30:0] == '0) |-> opb_00 
+endproperty
+
+assert_a8 : assert property(opb_zero)	
+		$display("Assertion passed: The opb_00 signal set for zero operands");
+	else
+		$display("opb_00 signal not set when operand has zero value");
 ////////////////////////////////////////////////////////////////////////
 //
 // Calculate Exponenet
