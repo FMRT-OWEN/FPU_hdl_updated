@@ -39,7 +39,138 @@ logic		fasu_op, fasu_op_r1, fasu_op_r2;
 logic [31:0] out_st4;
 logic inf_st4, snan_st4, qnan_st4, ine_st4, overflow_st4, underflow_st4, zero_st4, div_by_zero_st4;
 
+/////////////////////////////ASSERTIONS///////////////////////////////////////////////////////////
 
+property ev_reset;
+@(posedge fpu_if.clk) $rose(fpu_if.reset) |-> ##[1:$] $fell(fpu_if.reset) 
+endproperty
+
+assert_a2 : assert property(ev_reset)
+		$display( "Assertion Passed: active-high reset should eventually go low");
+		else
+		$display( " The active-high reset should eventually go low");
+
+sequence ovf_unf;
+(!(fpu_if.overflow && fpu_if.underflow))||$isunknown(fpu_if.overflow) || $isunknown(fpu_if.underflow); 
+endsequence
+assert_ovf_unf: assert property(@(posedge fpu_if.clk)ovf_unf);
+		
+
+property load_opa;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(opa_r) |-> (fpu_if.fpu_i.opa) || $past(fpu_if.fpu_i.opa,1) || $past(fpu_if.fpu_i.opa,2)  || $past(fpu_if.fpu_i.opa,3) || $past(fpu_if.fpu_i.opa,4) ||  $past(fpu_if.fpu_i.opa,5) || fpu_if.fpu_i.opa == '0;
+endproperty
+
+assert_a3 : assert property(load_opa)
+		$display("Assertion passed : The first operand loaded into the register ");
+		else
+		$display("The operand loads next cycle");
+
+property load_opb;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(opb_r) |-> ($past(fpu_if.fpu_i.opb,1) || $past(fpu_if.fpu_i.opb,2)  || $past(fpu_if.fpu_i.opb,3) || $past(fpu_if.fpu_i.opb,4) ||  $past(fpu_if.fpu_i.opb,5) || fpu_if.fpu_i.opb || fpu_if.fpu_i.opb == '0);
+
+endproperty
+
+assert_a4 : assert property(load_opb)
+		$display("Assertion passed : The second operand loaded into the register ");
+		else
+		$display("The operand loads next cycle");
+
+property load_rmode;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(rmode_r1) |-> $past(fpu_if.fpu_i.rmode,1) || $past(fpu_if.fpu_i.rmode,2) || $past(fpu_if.fpu_i.rmode,3) || $past(fpu_if.fpu_i.rmode,4) ||$past(fpu_if.fpu_i.rmode,4) || fpu_if.fpu_i.rmode || fpu_if.fpu_i.rmode== '0;
+endproperty
+
+assert_a5 : assert property(load_rmode)
+		$display("Assertion Passed: The rounding mode loaded into the register");
+		else
+		$display(" The rounding mode loads next cycle");
+
+property load_rmode_r2;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(rmode_r2) |->$past(rmode_r1,1) || $past(rmode_r1,2) || $past(rmode_r1,3) || $past(rmode_r1,4) ||rmode_r2 == '0 || rmode_r1 ;
+endproperty
+
+assert_a6 : assert property(load_rmode_r2)
+		$display("assert_a5, Assertion Passed: The contents of rounding mode are loaded into the register, rmode_r2");
+		else
+		$display("loads rmode_r2 next cycle ");
+
+property load_fpu_op;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(fpu_op_r1) |-> $past(fpu_if.fpu_i.fpu_op,1) ||  $past(fpu_if.fpu_i.fpu_op,2) ||  $past(fpu_if.fpu_i.fpu_op,3) ||  $past(fpu_if.fpu_i.fpu_op,4) ||  $past(fpu_if.fpu_i.fpu_op,5 || fpu_if.fpu_i.fpu_op || fpu_if.fpu_i.fpu_op == '0);
+endproperty
+
+assert_a7 : assert property(load_fpu_op)
+		$display("assert_a7, Assertion Passed: The type of operation is loaded into the register");
+	else
+		$display("Operation loads next cycle ");
+
+
+
+property load_fpu_op_r2; 
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(fpu_op_r2) |-> $past(fpu_op_r1,1) || $past(fpu_op_r1,2) ||  $past(fpu_op_r1,3) ||  $past(fpu_op_r1,4) ||  $past(fpu_op_r1,5)|| fpu_op_r1 || fpu_op_r2 == '0;
+endproperty
+
+assert_a8 : assert property(load_fpu_op_r2)
+		$display("assert_a8, Assertion Passed: The contents of type of operation are loaded into the register");
+	else
+		$display("operation loads next cycle");
+
+property load_fpu_op_r3;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(fpu_op_r3) |-> $past(fpu_op_r2,1)  || $past(fpu_op_r2,2) ||  $past(fpu_op_r2,3) ||  $past(fpu_op_r2,4) || $past(fpu_op_r2,5) ||fpu_op_r3 == '0|| fpu_op_r2;
+endproperty
+
+assert_a9 : assert property(load_fpu_op_r3)
+		$display("assert_a9, Assertion Passed: The contents of type of operation are loaded into the register");
+	else
+		$display("Operation loads next cycle");
+
+property load_sign_fasu;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(sign_fasu_r) |-> $past(sign_fasu,1) ||  $past(sign_fasu,2) ||  $past(sign_fasu,3) ||  $past(sign_fasu,4) ||  $past(sign_fasu,4)|| sign_fasu=='0 || sign_fasu;
+endproperty
+
+assert_a10 : assert property(load_sign_fasu)
+		$display("assert_a10, Assertion Passed: The sign output is loaded into the register");
+	else
+		$display("The sign output loads");
+
+
+property load_sign_mul;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(sign_mul_r) |-> $past(sign_mul,1) || $past(sign_mul,2) || $past(sign_mul,3) || $past(sign_mul,4) ||  $past(sign_mul,5) || sign_mul_r == '0 || sign_mul;
+endproperty
+
+assert_a11 : assert property(load_sign_mul)
+		$display("assert_a11, Assertion Passed: The FMUL sign output is loaded into the register");
+
+	else
+		$display(" The FMUL sign output loads");
+
+property load_sign_exe;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(sign_exe_r) |-> $past(sign_exe,1) || $past(sign_exe,2) || $past(sign_exe,3) || $past(sign_exe,4) ||  $past(sign_exe,5) || sign_exe_r == '0 || sign_exe;
+endproperty
+
+assert_a12 : assert property(load_sign_exe)
+		$display("assert_a12, Assertion passed: The FMUL exception sign output is loaded into the fpu pipelined register");
+	else
+		$display("The FMUL exception sign output loads");
+
+
+property load_inf_mul;
+@(posedge fpu_if.clk) disable iff(fpu_if.reset == 'x || fpu_if.reset == 1'b1)
+$changed(inf_mul_r) |-> $past(inf_mul,1) || $past(inf_mul,2) || $past(inf_mul,3) || $past(inf_mul,4) || $past(inf_mul,5) || inf_mul == '0 || inf_mul;
+endproperty
+
+assert_a13 : assert property(load_inf_mul)
+		$display("assert_a13, Assertion Passed: The FMUL inf output is loaded into the fpu pipelined register");
+	else
+		$display("The FMUL inf output loads ");
 ////////////////////////////////////////////////////////////////////////
 // Stage 1
 // Input Registers
