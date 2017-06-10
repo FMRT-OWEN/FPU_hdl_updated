@@ -109,6 +109,24 @@ assign expa_lt_expb = expa > expb;		// expa is larger than expb
 assign expa_dn = !(|expa);			// opa denormalized
 assign expb_dn = !(|expb);			// opb denormalized
 
+// ----------------------------ASSERTIONS----------------------------------------------
+property dn_a;
+@(posedge clk) disable iff(reset)
+ (opa[30:23] == 8'b0) |-> expa_dn 
+endproperty
+
+assert_prenorm_a1 : assert property (dn_a)
+$display ( "Assertion Passed: The first operanda denormalized, expa_dn is set");
+else $display ("Signal expa_dn is not set for denormalized number");
+
+property dn_b;
+@(posedge clk)
+ (opb[30:23] == '0) |-> expb_dn 
+endproperty
+
+assert_prenorm_a2 : assert property (dn_b)
+$display ( "Assertion Passed: The second operandb denormalized, expb_dn is set");
+else $display (" Signal expa_dn is not set for denormalized number");
 // ---------------------------------------------------------------------
 // Calculate the difference between the smaller and larger exponent
 
