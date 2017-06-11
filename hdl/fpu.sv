@@ -29,7 +29,7 @@ logic	[27:0]	fract_out_q;		 // fraction output (registerd)
 logic	[30:0]	out_d;			     // Intermediate final result output
 logic	overflow_d, underflow_d;     // Overflow/Underflow Indicators
 logic	[1:0]	rmode_r1, rmode_r2, rmode_r3;	    // Pipeline registers for rounding mode
-logic	[2:0]	fpu_op_r1, fpu_op_r2, fpu_op_r3;	// Pipeline registers for fp opration
+logic	[2:0]	fpu_op_r1, fpu_op_r2, fpu_op_r3, fpu_op_r4;	// Pipeline registers for fp opration
 logic	mul_inf, div_inf;
 logic	mul_00, div_00;
 //
@@ -209,6 +209,9 @@ always_ff @(posedge fpu_if.clk or posedge fpu_if.reset)
 	if ( fpu_if.reset == 1'b1) fpu_op_r3 <= 0;
 	else fpu_op_r3 <=  fpu_op_r2;
 
+always_ff @(posedge fpu_if.clk or posedge fpu_if.reset)
+	if ( fpu_if.reset == 1'b1) fpu_op_r4 <= 0;
+	else fpu_op_r4 <=  fpu_op_r4;
 ////////////////////////////////////////////////////////////////////////
 //
 // Exceptions block
@@ -675,7 +678,7 @@ logic [31:0] sqrt_out, final_out;
 
 FpSqrt u0_FpSqrt (.clk(fpu_if.clk), .reset(fpu_if.reset), .opa(fpu_if.fpu_i.opa), .Sqrt(sqrt_out));
 	
-assign final_out = (fpu_op_r3 != 4'b100)? out_st4 : sqrt_out; 
+assign final_out = (fpu_op_r4 != 4'b100)? out_st4 : sqrt_out; 
 
 
 	
