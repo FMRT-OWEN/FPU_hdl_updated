@@ -79,6 +79,40 @@ class random_instruction;
 			SQRT:=	20
 		};
 	}
+	
+	//constraint the input vectors
+	constraint outofbound_c {
+		
+		//constrain operand a		
+		instruction.opa.sign inside {[0:1]};
+		instruction.opa.exponent inside {[0:255]};
+		instruction.opa.mantissa inside {[1:2**23-1]};
+		
+		//constrain operand b
+		instruction.opb.sign inside {[0:1]};
+		instruction.opb.exponent inside {[0:255]};
+		instruction.opb.mantissa inside {[1:2**23-1]};
+
+
+		//constrain round mode and op code
+		instruction.rmode dist 
+		{
+			round_nearest_even	:= 20,
+			round_to_zero		:= 0,
+			round_up			:= 0,
+			round_down			:= 0
+		};
+		
+		instruction.fpu_op dist 
+		{
+			ADD:=	20,
+			SUB:=	20,
+			MULT:=	20,
+			DIV:=	20,
+			SQRT:=	0
+		};
+	}
+	
 endclass
 
 endpackage
