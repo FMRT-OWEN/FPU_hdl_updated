@@ -39,8 +39,9 @@ class scoreboard;
 	float_t 					opa;
 	float_t						opb;
 	float_t 					actual_result;
-	shortreal					expected_result;
 	byte						actual_flag_vector; 
+	shortreal					expected_result;
+	shortreal					expected_flag_vector;
 	fpu_instruction_t			sent_instruction;
 	scemi_dynamic_output_pipe 	monitorChannel;
 	
@@ -75,6 +76,11 @@ class scoreboard;
 			SQRT	:	expected_result = $sqrt($bitstoshortreal(sent_instruction.opa)); 
 		
 		endcase
+	
+	endfunction
+	
+	function void generate_expected_flags();
+	
 	
 	endfunction
 	
@@ -120,6 +126,19 @@ class scoreboard;
 				2 : $fwrite(output_file,"rmode : %18s,flag : %b , actual_result : %b %b %b, expected result : %b %b %b \n",
 					sent_instruction.rmode.name(),actual_flag_vector,
 					actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+				
+				//writes only input operands and output in binary format
+				3 : $fwrite(output_file,"opa : %b %b %b, opb : %b %b %b, flag : %b , ar : %b %b %b, er : %b %b %b \n",
+					sent_instruction.opa.sign,sent_instruction.opa.exponent, sent_instruction.opa.mantissa,
+					sent_instruction.opb.sign,sent_instruction.opb.exponent, sent_instruction.opb.mantissa,
+					actual_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+					
+				//writes only input operands in float and output in binary format
+				4 : $fwrite(output_file,"opa : %30f, opb : %30f, flag : %b , ar : %b %b %b, er : %b %b %b \n",
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),					
+					actual_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 			endcase
@@ -170,9 +189,9 @@ class scoreboard;
 				//increments the error_count if there is an error
 				verify_results();
 				
+				write_outputs(1);
 			end
 			
-			write_outputs(2);
 		
 			if(debug)	//Display in debug 
 				$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",sent_instruction.opa,sent_instruction.opb,expected_result,actual_result);
@@ -253,7 +272,8 @@ class stimulus_gen ;
 		//runs number of testcases	wanted to generate	, that no. of cycles
 		repeat(runs)		
 		begin
-			
+			r_instruction.constraint_mode(0);
+			r_instruction.squareroot_c.constraint_mode(1);
 			r_instruction.randomize();			
 			
 			sent_queue.push_back(r_instruction.instruction);	
