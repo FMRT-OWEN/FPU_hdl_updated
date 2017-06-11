@@ -112,7 +112,7 @@ assign expb_dn = !(|expb);			// opb denormalized
 // ----------------------------ASSERTIONS----------------------------------------------
 property dn_a;
 @(posedge clk) disable iff(reset)
- (opa[30:23] == 8'b0) |-> expa_dn 
+ (opa[30:23] == 8'b0) |-> expa_dn; 
 endproperty
 
 assert_prenorm_a1 : assert property (dn_a)
@@ -121,7 +121,7 @@ else $display ("Signal expa_dn is not set for denormalized number");
 
 property dn_b;
 @(posedge clk)
- (opb[30:23] == '0) |-> expb_dn 
+ (opb[30:23] == '0) |-> expb_dn;
 endproperty
 
 assert_prenorm_a2 : assert property (dn_b)

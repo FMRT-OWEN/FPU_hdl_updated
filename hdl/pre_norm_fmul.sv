@@ -85,7 +85,7 @@ assign   expb = opb[30:23];
 //----------------------------Assertions-------------------------------------------------------
 property opa_zero;
 @(posedge clk)
-(opa[30:0] == '0) |-> opa_00 
+(opa[30:0] == '0) |-> opa_00 ;
 endproperty
 
 assert_a7 : assert property(opa_zero)	
@@ -97,7 +97,7 @@ assert_a7 : assert property(opa_zero)
 
 property opb_zero;
 @(posedge clk)
-(opb[30:0] == '0) |-> opb_00 
+(opb[30:0] == '0) |-> opb_00 ;
 endproperty
 
 assert_a8 : assert property(opb_zero)	

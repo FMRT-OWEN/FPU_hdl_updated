@@ -42,7 +42,7 @@ logic inf_st4, snan_st4, qnan_st4, ine_st4, overflow_st4, underflow_st4, zero_st
 /////////////////////////////ASSERTIONS///////////////////////////////////////////////////////////
 
 property ev_reset;
-@(posedge fpu_if.clk) $rose(fpu_if.reset) |-> ##[1:$] $fell(fpu_if.reset) 
+@(posedge fpu_if.clk) $rose(fpu_if.reset) |-> ##[1:$] $fell(fpu_if.reset); 
 endproperty
 
 assert_a2 : assert property(ev_reset)
