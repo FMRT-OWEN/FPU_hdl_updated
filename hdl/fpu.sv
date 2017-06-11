@@ -211,7 +211,7 @@ always_ff @(posedge fpu_if.clk or posedge fpu_if.reset)
 
 always_ff @(posedge fpu_if.clk or posedge fpu_if.reset)
 	if ( fpu_if.reset == 1'b1) fpu_op_r4 <= 0;
-	else fpu_op_r4 <=  fpu_op_r4;
+	else fpu_op_r4 <=  fpu_op_r3;
 ////////////////////////////////////////////////////////////////////////
 //
 // Exceptions block
