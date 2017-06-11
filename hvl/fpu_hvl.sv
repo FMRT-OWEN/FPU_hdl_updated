@@ -5,10 +5,9 @@ import definitions::*;		// Provides custom type such as float_t, fpu_instruction
 import randomizer::*;
 
 //File Handlers
-int		operanda_file;
-int		operandb_file;
 int		output_file;
 int		input_file;
+int		error_file;
 
 //local parameters
 localparam data_width =	32;
@@ -54,8 +53,10 @@ class scoreboard;
 		//setup the file handle
 		if(file) 
 		begin
-			output_file=$fopen("output.txt","w");
+			output_file	= 	$fopen("output.txt","w");
+			error_file 	=	$fopen("error.txt","w");
 			$fwrite(output_file,"Output\n");
+			$fwrite(error_file,"Errors\n");
 		end
 		
 	end
@@ -118,16 +119,33 @@ class scoreboard;
 	//increments the error_count if there is an error
 	function void verify_results();
 		
-		//checking the correctness of the actual_result
-		if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
-		begin
-			$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
-					$shortrealtobits(expected_result),actual_result);
-				
-			error_count++;
+		case (sent_instruction.fpu_op)
+			
+		SQRT				: 	//since the squareroot algorithm is not super precise, need to consider +- 0.002
+								if(expected_result < ( $bitstoshortreal(actual_result) * 0.998 ) ||
+								expected_result > ( $bitstoshortreal(actual_result) * 1.002 ))
+								begin
+									$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
+											$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
+											$shortrealtobits(expected_result),actual_result);
+								write_errors(1);				
+								error_count++;						
+								end
+								
+		ADD, MULT, SUB, DIV : 	if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
+								begin
+									$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
+											$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
+											$shortrealtobits(expected_result),actual_result);
+									write_errors(2);				
+									error_count++;
+								
+								end
 		
-		end
+			
+		endcase
+		
+		
 		
 		
 	endfunction
@@ -167,6 +185,52 @@ class scoreboard;
 					
 				//writes only input operands in float and output in binary format
 				4 : $fwrite(output_file,"opa : %30f, opb : %30f, af : %b , ef : %b, ar : %b %b %b, er : %b %b %b \n",
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),					
+					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+				
+			endcase
+			
+		end
+	
+	endfunction
+	
+	function void write_errors(int float_format=1);
+	
+		bit [31:0] expected_result_bits = $shortrealtobits(expected_result);
+		if(file)
+		begin
+			case (float_format)
+				
+				//writes everything in binary format
+				0 : $fwrite(error_file,"opcode : %4s, rmode : %18s, opa : %b, opb : %b, af : %b, ef : %b, ar : %b %b %b, er : %b %b %b \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					sent_instruction.opa, sent_instruction.opb,
+					actual_flag_vector,expected_flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+				
+				//writes everything in floating point format
+				1 : $fwrite(error_file,"opcode : %4s, rmode : %18s, opa : %15f, opb : %15f, af : %b, ef : %b, ar : %15f, er : %15f \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
+					actual_flag_vector,expected_flag_vector,$bitstoshortreal(actual_result),expected_result);
+					
+				//writes everything in binary format except operands 
+				2 : $fwrite(error_file,"opcode : %4s, rmode : %18s, opa : %15f, opb : %15f, af : %b, ef : %b, ar : %b %b %b, er : %b %b %b \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
+					actual_flag_vector,expected_flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+				
+				//writes only input operands and output in binary format
+				3 : $fwrite(error_file,"opa : %b %b %b, opb : %b %b %b, af : %b, ef : %b, ar : %b %b %b, er : %b %b %b \n",
+					sent_instruction.opa.sign,sent_instruction.opa.exponent, sent_instruction.opa.mantissa,
+					sent_instruction.opb.sign,sent_instruction.opb.exponent, sent_instruction.opb.mantissa,
+					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+					
+				//writes only input operands in float and output in binary format
+				4 : $fwrite(error_file,"opa : %30f, opb : %30f, af : %b , ef : %b, ar : %b %b %b, er : %b %b %b \n",
 					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),					
 					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
@@ -219,7 +283,7 @@ class scoreboard;
 				//increments the error_count if there is an error
 				verify_results();
 				
-				write_outputs(4);
+				write_outputs(1);
 			end
 			
 		
@@ -259,13 +323,9 @@ class stimulus_gen ;
 		//if true, then stimulus will be taken from file
 		if(file) 
 		begin 	
-			operanda_file=$fopen("operanda.txt","w");
-			operandb_file=$fopen("operandb.txt","w");
-			input_file = $fopen("input.txt","w");
 			
+			input_file = $fopen("input.txt","w");			
 			$fwrite(input_file,"Inputs given to DUT\n");
-			$fwrite(operanda_file,"operanda\n");
-			$fwrite(operandb_file,"operandb\n");
 		end
 		
 	end
@@ -304,7 +364,9 @@ class stimulus_gen ;
 		begin
 			r_instruction.constraint_mode(0);
 			//r_instruction.squareroot_c.constraint_mode(1);
-			r_instruction.outofbound_c.constraint_mode(1);			
+			//r_instruction.outofbound_c.constraint_mode(1);
+			//r_instruction.cornercase_c.constraint_mode(1);	
+			r_instruction.exponent_c.constraint_mode(1);			
 			r_instruction.randomize();			
 			
 			sent_queue.push_back(r_instruction.instruction);	
