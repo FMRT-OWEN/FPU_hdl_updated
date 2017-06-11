@@ -34,6 +34,17 @@ typedef struct packed{
 	float_t opb;		     //32 bit floating type operand 2
 }fpu_instruction_t;
 
+typedef struct packed{
+	logic 	infinity;   
+	logic 	snan;  
+	logic 	qnan;    
+	logic 	inexact;  
+	logic 	overflow;   
+	logic 	underflow;  
+	logic 	zero;    
+	logic 	divbyzero;  
+}flags_t;
+
 endpackage 
 
 
