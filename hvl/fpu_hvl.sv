@@ -41,7 +41,7 @@ class scoreboard;
 	float_t 					actual_result;
 	byte						actual_flag_vector; 
 	shortreal					expected_result;
-	shortreal					expected_flag_vector;
+	flags_t						expected_flag_vector;
 	fpu_instruction_t			sent_instruction;
 	scemi_dynamic_output_pipe 	monitorChannel;
 	
@@ -76,11 +76,41 @@ class scoreboard;
 			SQRT	:	expected_result = $sqrt($bitstoshortreal(sent_instruction.opa)); 
 		
 		endcase
-	
+		
+		generate_expected_flags();
 	endfunction
 	
 	function void generate_expected_flags();
-	
+		
+		float_t		result 		= $shortrealtobits(expected_result);
+		expected_flag_vector 	= 8'b0000_0000;
+		
+		expected_flag_vector.inexact = 1'b1;
+		if(result.exponent === 8'b0000_0000)
+			if(result.mantissa === {23{1'b0}})
+			begin
+				expected_flag_vector.zero = 1'b1;	
+				expected_flag_vector.underflow = 1'b1;
+			end
+			else
+				expected_flag_vector.underflow = 1'b1;
+				
+		
+		if(result.exponent === 8'b1111_1111)
+			if(result.mantissa !== {23{1'b0}})
+			begin
+				expected_flag_vector.qnan = 1'b1;
+				expected_flag_vector.snan = 1'b1;
+				expected_flag_vector.inexact = 1'b0;
+			end
+			else
+			begin
+				expected_flag_vector.infinity = 1'b1;
+				expected_flag_vector.overflow = 1'b1;
+			end
+
+								
+					
 	
 	endfunction
 	
@@ -129,16 +159,16 @@ class scoreboard;
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 				//writes only input operands and output in binary format
-				3 : $fwrite(output_file,"opa : %b %b %b, opb : %b %b %b, flag : %b , ar : %b %b %b, er : %b %b %b \n",
+				3 : $fwrite(output_file,"opa : %b %b %b, opb : %b %b %b, af : %b, ef : %b, ar : %b %b %b, er : %b %b %b \n",
 					sent_instruction.opa.sign,sent_instruction.opa.exponent, sent_instruction.opa.mantissa,
 					sent_instruction.opb.sign,sent_instruction.opb.exponent, sent_instruction.opb.mantissa,
-					actual_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 					
 				//writes only input operands in float and output in binary format
-				4 : $fwrite(output_file,"opa : %30f, opb : %30f, flag : %b , ar : %b %b %b, er : %b %b %b \n",
+				4 : $fwrite(output_file,"opa : %30f, opb : %30f, af : %b , ef : %b, ar : %b %b %b, er : %b %b %b \n",
 					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),					
-					actual_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 			endcase
@@ -189,7 +219,7 @@ class scoreboard;
 				//increments the error_count if there is an error
 				verify_results();
 				
-				write_outputs(1);
+				write_outputs(4);
 			end
 			
 		
@@ -273,7 +303,8 @@ class stimulus_gen ;
 		repeat(runs)		
 		begin
 			r_instruction.constraint_mode(0);
-			r_instruction.squareroot_c.constraint_mode(1);
+			//r_instruction.squareroot_c.constraint_mode(1);
+			r_instruction.outofbound_c.constraint_mode(1);			
 			r_instruction.randomize();			
 			
 			sent_queue.push_back(r_instruction.instruction);	
