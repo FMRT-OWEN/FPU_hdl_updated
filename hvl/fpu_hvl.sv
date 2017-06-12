@@ -2,7 +2,7 @@
 
 import scemi_pipes_pkg::*; 	// For trans-language TLM channels.
 import definitions::*;		// Provides custom type such as float_t, fpu_instruction_t
-import randomizer::*;
+import randomizer::*;		// provides randomized constraints
 
 //File Handlers
 int		output_file;
@@ -81,6 +81,7 @@ class scoreboard;
 		generate_expected_flags();
 	endfunction
 	
+	//generates most of the expected flags
 	function void generate_expected_flags();
 		
 		float_t		result 		= $shortrealtobits(expected_result);
@@ -119,37 +120,47 @@ class scoreboard;
 	//increments the error_count if there is an error
 	function void verify_results();
 		
-		case (sent_instruction.fpu_op)
+		if(sent_instruction.fpu_op == SQRT)
+		begin
+			//since the squareroot algorithm is not precise, need to consider +- 0.002
+			if(expected_result < ( $bitstoshortreal(actual_result) * 0.998 ) ||
+			expected_result > ( $bitstoshortreal(actual_result) * 1.002 ))
+			begin
+				write_errors(1);				
+				error_count++;						
+			end
+		end
+		else
+		begin
+			if(expected_result != $bitstoshortreal(actual_result))		//If obtained and expected products don't match, its an error
+			begin
+				write_errors(1);				
+				error_count++;
 			
-		SQRT				: 	//since the squareroot algorithm is not super precise, need to consider +- 0.002
-								if(expected_result < ( $bitstoshortreal(actual_result) * 0.998 ) ||
-								expected_result > ( $bitstoshortreal(actual_result) * 1.002 ))
-								begin
-									$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-											$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
-											$shortrealtobits(expected_result),actual_result);
-								write_errors(1);				
-								error_count++;						
-								end
-								
-		ADD, MULT, SUB, DIV : 	if($shortrealtobits(expected_result) !== actual_result)		//If obtained and expected products don't match, its an error
-								begin
-									$display("Error: opa=%f opb=%f expected result=%b obtained product =%b",
-											$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),
-											$shortrealtobits(expected_result),actual_result);
-									write_errors(2);				
-									error_count++;
-								
-								end
+			end
+		end
 		
+		//verifying flags
+		
+		if(expected_flag_vector.infinity !== actual_flag_vector[7])
+			write_errors(5);
 			
-		endcase
+		if(expected_flag_vector.snan || expected_flag_vector.qnan)
+			begin
+				if(!(actual_flag_vector[6] || actual_flag_vector[5]))
+					write_errors(5);
+			end
 		
+		if(expected_flag_vector.overflow !== actual_flag_vector[3])
+			write_errors(5);
+			
+		if(expected_flag_vector.underflow !== actual_flag_vector[2])
+			write_errors(5);
 		
-		
-		
+											
 	endfunction
 
+	//writes details to the output file
 	function void write_outputs(int float_format=1);
 	
 		bit [31:0] expected_result_bits = $shortrealtobits(expected_result);
@@ -195,6 +206,7 @@ class scoreboard;
 	
 	endfunction
 	
+	//writes the details to error file
 	function void write_errors(int float_format=1);
 	
 		bit [31:0] expected_result_bits = $shortrealtobits(expected_result);
@@ -234,6 +246,13 @@ class scoreboard;
 					$bitstoshortreal(sent_instruction.opa), $bitstoshortreal(sent_instruction.opb),					
 					actual_flag_vector,expected_flag_vector, actual_result.sign,actual_result.exponent,actual_result.mantissa,
 					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
+					
+				//writes everything in binary format
+				5 : $fwrite(error_file,"Error in flags::: opcode : %4s, rmode : %18s, opa : %b, opb : %b, af : %b, ef : %b, ar : %b %b %b, er : %b %b %b \n", 
+					sent_instruction.fpu_op.name(), sent_instruction.rmode.name(),
+					sent_instruction.opa, sent_instruction.opb,
+					actual_flag_vector,expected_flag_vector,actual_result.sign,actual_result.exponent,actual_result.mantissa,
+					expected_result_bits[31], expected_result_bits[30:23], expected_result_bits[22:0]);
 				
 			endcase
 			
@@ -253,7 +272,6 @@ class scoreboard;
 			//first 4 bytes hold output of fpu operation in reverse byte order
 			//last byte holds the flag vector raised by the floating point operation
 			//NOTE: the above arrangement depends on the order in which data is sent from HDL side
-			//TODO: make this signed in order to process signed outputs 
 			automatic byte unsigned data_received[] = new[5];
 			
 			//receives the data from HDL
@@ -285,7 +303,6 @@ class scoreboard;
 				
 				write_outputs(1);
 			end
-			
 		
 			if(debug)	//Display in debug 
 				$display("opa=%f opb=%f Expected result=%f Obtained actual_result =%f",sent_instruction.opa,sent_instruction.opb,expected_result,actual_result);
@@ -320,7 +337,7 @@ class stimulus_gen ;
 		r_instruction		= new();
 
 		
-		//if true, then stimulus will be taken from file
+		//if true, initiates the input file handler
 		if(file) 
 		begin 	
 			
@@ -331,6 +348,7 @@ class stimulus_gen ;
 	end
 	endfunction
 
+	//writes the details of generated inputs
 	function void write_inputs(bit float_format=1);
 		if(file)
 		begin
@@ -362,29 +380,13 @@ class stimulus_gen ;
 		//runs number of testcases	wanted to generate	, that no. of cycles
 		repeat(runs)		
 		begin
-			r_instruction.constraint_mode(0);
-			//r_instruction.squareroot_c.constraint_mode(1);
-			//r_instruction.outofbound_c.constraint_mode(1);
-			//r_instruction.cornercase_c.constraint_mode(1);	
-			r_instruction.exponent_c.constraint_mode(1);			
-			r_instruction.randomize();			
+	
+			assert(r_instruction.randomize())
+			else $fatal(0,"(Instruction randomize failed");
 			
 			sent_queue.push_back(r_instruction.instruction);	
 			
 			write_inputs();
-			
-			//TODO:debug : 
-			//inference: instruction is getting filled in the order of the underlying struct
-			//$fwrite(operanda_file,"sent vector =>  %b \n",r_instruction.instruction);
-			
-			
-
-			
-			// foreach(data_send[i])
-			// begin
-				// data_send[i] = instruction[7:0];
-				// instruction = {8'b0,instruction[31:8]};
-			// end 
 			
 			//packing instruction struct into a queue of bytes
 			//0th byte represents {3'b0,3bit opcode,2bit round mode}
@@ -437,9 +439,6 @@ module fpu_hvl;
 	fork
 	  if($value$plusargs("RUNS=%d",runs))	//is a way to take input
 		$display("Generating %d Operands",runs);
-		
-	   if($value$plusargs("SIGNS=%s",signs))
-		$display("Generating Multiplicand with %c Sign and Multiplier with %c Sign",signs[15:8],signs[7:0]);
 				
 		scb 		= new();			
 		stim_gen 	= new();
@@ -455,7 +454,7 @@ begin
 	if(!error_count)
 	$display("All tests are successful");
 	else
-	$display("%0d Tests failed",error_count);
+	$display("%0d Tests failed out of %0d",error_count,runs);
 end
 endmodule
  

@@ -341,7 +341,7 @@ logic	[49:0]	remainder;
 logic		remainder_00;
 logic	[4:0]	div_opa_ldz_d, div_opa_ldz_r1, div_opa_ldz_r2;
 
-always_comb //@(fracta_mul)
+always_comb 
 	casex(fracta_mul[22:0])
 	   23'b1??????????????????????: div_opa_ldz_d = 1;
 	   23'b01?????????????????????: div_opa_ldz_d = 2;
@@ -422,7 +422,7 @@ always_ff @(posedge fpu_if.clk or posedge fpu_if.reset)
 			(sign_d ?  1-{24'h00, (|opa_r1[30:23]), opa_r1[22:0]}-1 : {24'h0, (|opa_r1[30:23]), opa_r1[22:0]}) :
 			(sign_d ? 1 - {opa_r1, 17'h01} : {opa_r1, 17'h0});
 
-always_comb //@(fpu_op_r3 or fract_out_q or prod or fract_div or fract_i2f)
+always_comb 
 	case(fpu_op_r3)
 	   0,1:	fract_denorm = {fract_out_q, 20'h0};
 	   2:	fract_denorm = prod;

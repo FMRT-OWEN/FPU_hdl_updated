@@ -1,7 +1,7 @@
 all: clean compile sim
 
-MODE ?= puresim
-#MODE ?= veloce
+#MODE ?= puresim
+MODE ?= veloce
 
 VLOG = \
 		hdl/definitions.sv \
@@ -34,7 +34,7 @@ endif
 
 
 sim:
-	vsim -c fpu_hvl top TbxSvManager +RUNS=1000 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
+	vsim -c fpu_hvl top TbxSvManager +RUNS=10000 +SIGNS=-+ -do "run -all" +tbxrun+"$(QUESTA_RUNTIME_OPTS)" -l output.log
 
 clean:
 	rm -rf work transcript vsim.wlf dpi.so modelsim.ini output.log result.TBX tbxsvlink.log

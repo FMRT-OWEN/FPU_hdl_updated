@@ -33,8 +33,6 @@
 	
 	//instantiating the DUT
 	fpu fpu_inst(fpu_if);
-	
-	//booth_fsm #(data_width,data_width) m1(.clk(clk),.reset(reset),.load(load),.m(m),.r(r),.product(product),.done(done));
 
 	assign result = fpu_if.out;
 	assign flag_vector = {fpu_if.inf,fpu_if.snan,fpu_if.qnan,fpu_if.ine,fpu_if.overflow,fpu_if.underflow,fpu_if.zero,fpu_if.div_by_zero};
@@ -88,15 +86,6 @@
 				issued 		<=1;
 		end
 		
-		//TODO:debug
-		//************************
-		`ifdef DEBUG
-			$display("opa %f, opb %f, op_code %b, round_mode %b, result %f, flage %b",
-					$bitstoshortreal(opa),$bitstoshortreal(opb),op_code,round_mode,$bitstoshortreal(result),flag_vector);
-		`endif
-		//$display("opa %b, opb %b, op_code %b, round_mode %b",opa,opb,op_code,round_mode);
-		//$display("opa %b, opb %b, op_code %b, round_mode %b",fpu_if.fpu_i.opa,fpu_if.fpu_i.opb,fpu_if.fpu_i.fpu_op,fpu_if.fpu_i.rmode);
-		//************************
         
 	end
 	

@@ -160,8 +160,8 @@ assign adj_op_out	= {adj_op_out_sft[26:1], adj_op_out_sft[0] | sticky };
 // ---------------------------------------------------------------------
 // Get truncated portion (sticky bit)
 
-always_comb //@(exp_diff_sft or adj_op_tmp)
-   case(exp_diff_sft)		// synopsys full_case parallel_case
+always_comb 
+   case(exp_diff_sft)		
 	00: sticky = 1'h0;
 	01: sticky =  adj_op_tmp[0]; 
 	02: sticky = |adj_op_tmp[01:0];
@@ -217,8 +217,8 @@ always_ff @(posedge clk or posedge reset)
 // Determine sign for the output
 
 // sign: 0=Positive Number; 1=Negative Number
-always_comb //@(signa or signb or add or fractb_lt_fracta)
-   case({signa, signb, add})		// synopsys full_case parallel_case
+always_comb 
+   case({signa, signb, add})		
 
    	// Add
 	3'b0_0_1: sign_d = 0;
@@ -278,8 +278,8 @@ always_ff @(posedge clk or posedge reset)
 //
 
 // add: 1=Add; 0=Subtract
-always_comb //@(signa or signb or add)
-   case({signa, signb, add})		// synopsys full_case parallel_case
+always_comb 
+   case({signa, signb, add})		
    
    	// Add
 	3'b0_0_1: add_d = 1;
